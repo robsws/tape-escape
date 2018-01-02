@@ -34,10 +34,6 @@ class TileType(Enum):
     WALL   = 2
     PLAYER = 3
 
-class PlayerOrientation(Enum):
-    LEFT  = 1
-    RIGHT = 2
-
 class GameState:
 
     def __init__(self, level):
