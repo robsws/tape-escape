@@ -84,10 +84,8 @@ class GameState:
             prev_tape_end_position = tape_end_position
             tape_end_position = vector_add(tape_end_position, self.player_direction)
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-            print(tape_end_position, tape_edge_position)
         # we want the tape to end up behind the wall, so use prev tape end position
         tape_end_position = prev_tape_end_position
-        print(tape_end_position)
         self.tape_end_position = tape_end_position
 
     # def retract_tape(self):
