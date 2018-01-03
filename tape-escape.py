@@ -90,20 +90,23 @@ class GameState:
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
 
-    # def retract_tape(self):
+    def retract_tape(self):
+        print('retract_tape');
 
-    # def rotate_left(self):
+    def rotate_left(self):
+        print('rotate_left');
 
-    # def rotate_right(self):
+    def rotate_right(self):
+        print('rotate_right');
 
-    # def switch_orientation(self):
+    def switch_orientation(self):
+        print('switch_orientation');
 
 pygame.init()
 config = configparser.ConfigParser()
 config.read('levels.ini')
 level = config['Levels']['1']
 state = GameState(level)
-state.extend_tape()
 
 tile_width = SCREEN_WIDTH/state.grid_width
 screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -111,9 +114,18 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 # Main game loop
 finished = False
 while not finished:
-    # Quit game if QUIT signal is detected
     for event in pygame.event.get():
-        if event.type == pygame.QUIT: finished = True
+        # Capture input from mouse
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1: # left click
+                state.extend_tape()
+            elif event.button == 2: # middle click
+                state.switch_orientation()
+            elif event.button == 3: # right click
+                state.retract_tape()
+        # Quit game if QUIT signal is detected
+        elif event.type == pygame.QUIT:
+            finished = True
     
     # Reset screen to black
     screen.fill(BLACK)
