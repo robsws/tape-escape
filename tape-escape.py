@@ -63,9 +63,7 @@ class GameState:
                     self.player_position = (x,y)
                     self.tape_end_position = (x,y)
 
-    # Methods for updating state based on input
-    def extend_tape(self):
-        # tape goes as far forward as possible, TODO(then pushes player back)
+    def move_tape(self, direction, terminal_length):
         tape_end_position = self.tape_end_position
         prev_tape_end_position = tape_end_position
         # tape edge is where the very tip of the tape end resides, the adjacent square to the tape end position.
@@ -80,18 +78,31 @@ class GameState:
         # player position (O) = (1,2)
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
+        print(tape_end_position)
+        print(tape_edge_position)
         tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and tape_length <= MAX_TAPE_LENGTH:
+        prev_tape_length = tape_length
+        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and prev_tape_length != terminal_length:
             prev_tape_end_position = tape_end_position
-            tape_end_position = vector_add(tape_end_position, self.player_direction)
+            tape_end_position = vector_add(tape_end_position, direction)
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-            tape_length += 1
+            prev_tape_length = tape_length
+            tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
+            print(tape_length)
         # we want the tape to end up behind the wall, so use prev tape end position
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
 
+    # Methods for updating state based on input
+    def extend_tape(self):
+        # tape goes as far forward as possible
+        # TODO then pushes player back if already against wall
+        self.move_tape(self.player_direction, MAX_TAPE_LENGTH)
+
     def retract_tape(self):
-        print('retract_tape');
+        # tape comes back towards the player as far as possible
+        # TODO then pulls player towards it if already against a wall
+        self.move_tape(vector_scalar_multiply(self.player_direction, -1), 0)
 
     def rotate_left(self):
         print('rotate_left');
