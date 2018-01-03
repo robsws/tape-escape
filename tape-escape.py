@@ -100,7 +100,7 @@ class GameState:
         print('rotate_right');
 
     def switch_orientation(self):
-        print('switch_orientation');
+        self.player_orientation *= -1
 
 pygame.init()
 config = configparser.ConfigParser()
