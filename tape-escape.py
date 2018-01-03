@@ -15,11 +15,15 @@ YELLOW     = 150, 150,   0
 
 TILE_BORDER = 2
 
-TAPE_LENGTH = 6
+MAX_TAPE_LENGTH = 6
 
 def vector_add(vec1, vec2):
     # Add two 2d tuples elementwise
     return tuple(sum(x) for x in zip(vec1, vec2))
+
+def vector_minus(vec1, vec2):
+    # Subtract two 2d tuples elementwise
+    return tuple(x[0] - x[1] for x in zip(vec1, vec2))
 
 def vector_scalar_multiply(vec, scalar):
     # Multiply 2d tuple by scalar elementwise
@@ -44,7 +48,7 @@ class GameState:
         }
         self.player_position = (0,0)
         self.player_direction = (0,-1)
-        self.player_orientation = 1 # -1 for left, 1 for right
+        self.player_orientation = -1 # -1 for left, 1 for right
         self.tape_end_position = (0,0)
 
         # Build the internal level grid from config
@@ -76,10 +80,12 @@ class GameState:
         # player position (O) = (1,2)
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL:
+        tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
+        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and tape_length <= MAX_TAPE_LENGTH:
             prev_tape_end_position = tape_end_position
             tape_end_position = vector_add(tape_end_position, self.player_direction)
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
+            tape_length += 1
         # we want the tape to end up behind the wall, so use prev tape end position
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
