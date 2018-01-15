@@ -122,7 +122,6 @@ class GameState:
                 player_position = vector_add(player_position, self.player_direction)
                 prev_tape_length = tape_length
                 tape_length = abs(sum(vector_minus(prev_tape_end_position, player_position)))
-                print(tape_length)
             # we want the tape to end up inbetween us and the wall, so use prev tape end position
             self.player_position = prev_player_position
         else:
