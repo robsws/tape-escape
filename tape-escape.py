@@ -91,7 +91,7 @@ class GameState:
                 prev_player_position = player_position
                 player_position = vector_add(player_position, vector_scalar_multiply(self.player_direction, -1))
                 prev_tape_length = tape_length
-                tape_length = abs(sum(vector_minus(tape_end_position, player_position)))
+                tape_length = abs(sum(vector_minus(prev_tape_end_position, player_position)))
             self.player_position = prev_player_position           
         else:
             # Extend tape as far as it can go
@@ -107,18 +107,31 @@ class GameState:
     def retract_tape(self):
         # tape comes back towards the player as far as possible
         # TODO then pulls player towards it if already against a wall
-        retract_direction = vector_scalar_multiply(self.player_direction, -1)
+        prev_tape_end_position = self.tape_end_position
         tape_end_position = self.tape_end_position
-        prev_tape_end_position = tape_end_position
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
         tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and tape_length != 0:
-            tape_end_position = vector_add(tape_end_position, retract_direction)
-            tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-            tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-        # we want the tape to end up inbetween us and the wall, so use prev tape end position
-        self.tape_end_position = tape_end_position
+        if self.grid[self.tape_end_position[0]][self.tape_end_position[1]] == TileType.WALL or self.grid[tape_edge_position[0]][tape_edge_position[1]] == TileType.WALL:
+            prev_player_position = self.player_position
+            player_position = vector_add(prev_player_position, self.player_direction)
+            prev_tape_length = tape_length
+            tape_length -= 1
+            while self.grid[player_position[0]][player_position[1]] != TileType.WALL and prev_tape_length != 0:
+                prev_player_position = player_position
+                player_position = vector_add(player_position, self.player_direction)
+                prev_tape_length = tape_length
+                tape_length = abs(sum(vector_minus(prev_tape_end_position, player_position)))
+                print(tape_length)
+            # we want the tape to end up inbetween us and the wall, so use prev tape end position
+            self.player_position = prev_player_position
+        else:
+            while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and tape_length != 0:
+                tape_end_position = vector_add(tape_end_position, vector_scalar_multiply(self.player_direction, -1))
+                tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
+                tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
+            # we want the tape to end up inbetween us and the wall, so use prev tape end position
+            self.tape_end_position = tape_end_position
 
     def change_direction(self, direction):
         # TODO restrict if wall in the way
