@@ -10,6 +10,7 @@ SCREEN_BORDER = 4
 BLACK      =   0,   0,   0
 DARK_GREY  =  30,  30,  30
 LIGHT_GREY = 100, 100, 100
+SILVER     = 200, 200, 200
 RED        = 150,   0,   0
 YELLOW     = 150, 150,   0
 
@@ -216,13 +217,14 @@ while not finished:
                 screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
             elif tiletype == TileType.WALL:
                 screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
-            if state.tape_end_position == (x,y):
-                tape_end_centre = (int(x * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(y * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
-                tape_edge_offset = vector_scalar_multiply(rotate_right(state.player_direction), state.player_orientation * tile_width * 0.66) 
-                tape_edge = vector_add(tape_end_centre, tape_edge_offset)
-                pygame.draw.line(screen, YELLOW, tape_end_centre, tape_edge, 2)
-            if state.player_position == (x,y):
-                pygame.draw.circle(screen, RED, (int(x * tile_width + tile_width/2), int(y * tile_width + tile_width/2)), int(tile_width/2), 0)
+    # Draw player
+    tape_end_centre = (int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
+    tape_edge_offset = vector_scalar_multiply(rotate_right(state.player_direction), state.player_orientation * tile_width * 0.66) 
+    tape_edge = vector_add(tape_end_centre, tape_edge_offset)
+    player_screen_position = (int(state.player_position[0] * tile_width + tile_width/2), int(state.player_position[1] * tile_width + tile_width/2))
+    pygame.draw.line(screen, YELLOW, tape_end_centre, player_screen_position, 2)
+    pygame.draw.line(screen, SILVER, tape_end_centre, tape_edge, 2)
+    pygame.draw.circle(screen, RED, player_screen_position, int(tile_width/2), 0)
 
     # Swap the buffers
     pygame.display.flip()
