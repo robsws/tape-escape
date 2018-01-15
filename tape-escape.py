@@ -1,6 +1,8 @@
 from enum import Enum
 import pygame
 import configparser
+from itertools import *
+from collections import defaultdict
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 600, 400
 GRID_WIDTH = 30
@@ -51,6 +53,7 @@ class GameState:
         self.player_direction = (0,-1)
         self.player_orientation = -1 # -1 for left, 1 for right
         self.tape_end_position = (0,0)
+        self.circle_points = set() # TODO remove        
 
         # Build the internal level grid from config
         lines = level.splitlines()
@@ -134,10 +137,52 @@ class GameState:
             self.tape_end_position = tape_end_position
 
     def change_direction(self, direction):
-        # TODO restrict if wall in the way
-        self.player_direction = direction
+        # Changes the player_direction to 'direction', provided there are no obstructions
+        # Returns the list of obstruction coordinates or None if no obstructions found.
+        # Skip if target direction is already the way we are facing or opposite the way we are facing (only 90 degree moves are valid)
+        if self.player_direction == direction or self.player_direction == vector_scalar_multiply(direction, -1):
+            return None
+        # Add one to the tape length for the purposes of calculating the arc of movement.
         tape_length = abs(sum(vector_minus(self.tape_end_position, self.player_position)))
-        self.tape_end_position = vector_add(self.player_position, vector_scalar_multiply(self.player_direction, tape_length))
+        tape_arc_radius = tape_length + 1
+        # Scan across the bounding square whose sides are length t*2 where t = tape radius
+        # and for each point, if it is a wall and is within the circle traced by the tape
+        # it counts as an obstruction.
+        # The bounding square is split into four quadrants (nw, sw, ne, se) and move will be limited
+        # based on current direction and which quadrants contain an obstruction
+        obstructions = defaultdict(set)
+        self.circle_points = set()
+        for x in range(max(0, self.player_position[0] - tape_arc_radius), min(self.player_position[0] + 1, GRID_WIDTH)):
+            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
+                # Check for obstructions in North West quadrant
+                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                    obstructions[((-1,0),(0,-1))].add((x,y)) # west to north
+                    obstructions[((0,-1),(-1,0))].add((x,y)) # north to west
+            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
+                # Check for obstructions in South West quadrant
+                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                    obstructions[((-1,0),(0,1))].add((x,y)) # west to south
+                    obstructions[((0,1),(-1,0))].add((x,y)) # south to west
+        for x in range(max(0, self.player_position[0]), min(self.player_position[0] + tape_arc_radius, GRID_WIDTH)):
+            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
+                # Check for obstructions in North East quadrant
+                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                    obstructions[((0,-1),(1,0))].add((x,y)) # north to east
+                    obstructions[((1,0),(0,-1))].add((x,y)) # east to north
+            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
+                # Check for obstructions in South East quadrant
+                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                    obstructions[((0,1),(1,0))].add((x,y)) # south to east
+                    obstructions[((1,0),(0,1))].add((x,y)) # east to south
+
+        if (self.player_direction, direction) not in obstructions:
+            # Intended rotation is not obstructed, update state.
+            self.player_direction = direction
+            self.tape_end_position = vector_add(self.player_position, vector_scalar_multiply(self.player_direction, tape_length))
+        else:
+            # Intended rotation is obstructed, return a set of the obstructions.
+            return obstructions[(self.player_direction, direction)]
+        return None
 
     def switch_orientation(self):
         self.player_orientation *= -1
@@ -183,28 +228,29 @@ while not finished:
     # w X e
     #  / \
     # / s \
+    obstruction_coords = None
     if mouse_player_space_x > 0:
         # Mouse is East of player
         if mouse_player_space_y > mouse_player_space_x:
             # Mouse is South of player
-            state.change_direction((0, 1))
+            obstruction_coords = state.change_direction((0, 1))
         elif -mouse_player_space_y > mouse_player_space_x:
             # Mouse is North of player
-            state.change_direction((0, -1))
+            obstruction_coords = state.change_direction((0, -1))
         else:
             # Mouse is strictly East of player
-            state.change_direction((1, 0))
+            obstruction_coords = state.change_direction((1, 0))
     else:
         # Mouse is West of player
         if mouse_player_space_y > -mouse_player_space_x:
             # Mouse is South of player
-            state.change_direction((0, 1))
+            obstruction_coords = state.change_direction((0, 1))
         elif -mouse_player_space_y > -mouse_player_space_x:
             # Mouse is North of player
-            state.change_direction((0, -1))
+            obstruction_coords = state.change_direction((0, -1))
         else:
             # Mouse is strictly West of player
-            state.change_direction((-1, 0))
+            obstruction_coords = state.change_direction((-1, 0))
 
     # Reset screen to black
     screen.fill(BLACK)
@@ -215,8 +261,13 @@ while not finished:
             tiletype = state.grid[x][y]
             if tiletype == TileType.SPACE or tiletype == TileType.PLAYER:
                 screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+            elif obstruction_coords != None and (x, y) in obstruction_coords:
+                screen.fill(RED, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)                
             elif tiletype == TileType.WALL:
                 screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+            if (x, y) in state.circle_points:
+                pygame.draw.circle(screen, BLACK, (int(x * tile_width + tile_width/2), int(y * tile_width + tile_width/2)), 4, 0)
+                
     # Draw player
     tape_end_centre = (int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
     tape_edge_offset = vector_scalar_multiply(rotate_right(state.player_direction), state.player_orientation * tile_width * 0.66) 
