@@ -78,8 +78,6 @@ class GameState:
         # player position (O) = (1,2)
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-        print(tape_end_position)
-        print(tape_edge_position)
         tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
         prev_tape_length = tape_length
         while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and prev_tape_length != terminal_length:
@@ -88,7 +86,6 @@ class GameState:
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
             prev_tape_length = tape_length
             tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-            print(tape_length)
         # we want the tape to end up behind the wall, so use prev tape end position
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
@@ -126,7 +123,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 finished = False
 while not finished:
     for event in pygame.event.get():
-        # Capture input from mouse
+        # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # left click
                 state.extend_tape()
@@ -138,6 +135,45 @@ while not finished:
         elif event.type == pygame.QUIT:
             finished = True
     
+    # Capture mouse hover position to determine which way to face
+    mouse_position = pygame.mouse.get_pos()
+    # Convert everything to window space coordinates
+    mouse_window_space_x = mouse_position[0] / SCREEN_WIDTH
+    mouse_window_space_y = mouse_position[1] / SCREEN_HEIGHT
+    player_window_space_x = state.player_position[0] / GRID_WIDTH
+    player_window_space_y = state.player_position[1] / GRID_HEIGHT
+    # Make coordinates relative to the player
+    mouse_player_space_x = mouse_window_space_x - player_window_space_x
+    mouse_player_space_y = mouse_window_space_y - player_window_space_y
+    # Calculate which quadrant the mouse position exists in
+    # \ n /
+    #  \ /
+    # w X e
+    #  / \
+    # / s \
+    if mouse_player_space_x > 0:
+        # Mouse is East of player
+        if mouse_player_space_y > mouse_player_space_x:
+            # Mouse is South of player
+            state.player_direction = (0, 1)
+        elif -mouse_player_space_y > mouse_player_space_x:
+            # Mouse is North of player
+            state.player_direction = (0, -1)
+        else:
+            # Mouse is strictly East of player
+            state.player_direction = (1, 0)
+    else:
+        # Mouse is West of player
+        if mouse_player_space_y > -mouse_player_space_x:
+            # Mouse is South of player
+            state.player_direction = (0, 1)
+        elif -mouse_player_space_y > -mouse_player_space_x:
+            # Mouse is North of player
+            state.player_direction = (0, -1)
+        else:
+            # Mouse is strictly West of player
+            state.player_direction = (-1, 0)
+
     # Reset screen to black
     screen.fill(BLACK)
 
