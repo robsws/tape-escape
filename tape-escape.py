@@ -86,7 +86,7 @@ class GameState:
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
             prev_tape_length = tape_length
             tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-        # we want the tape to end up behind the wall, so use prev tape end position
+        # we want the tape to end up inbetween us and the wall, so use prev tape end position
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
 
@@ -101,11 +101,12 @@ class GameState:
         # TODO then pulls player towards it if already against a wall
         self.move_tape(vector_scalar_multiply(self.player_direction, -1), 0)
 
-    def rotate_left(self):
-        print('rotate_left');
-
-    def rotate_right(self):
-        print('rotate_right');
+    def change_direction(self, direction):
+        # TODO restrict if wall in the way
+        # TODO rotate tape end position too
+        self.player_direction = direction
+        tape_length = abs(sum(vector_minus(self.tape_end_position, self.player_position)))
+        self.tape_end_position = vector_add(self.player_position, vector_scalar_multiply(self.player_direction, tape_length))
 
     def switch_orientation(self):
         self.player_orientation *= -1
@@ -155,24 +156,24 @@ while not finished:
         # Mouse is East of player
         if mouse_player_space_y > mouse_player_space_x:
             # Mouse is South of player
-            state.player_direction = (0, 1)
+            state.change_direction((0, 1))
         elif -mouse_player_space_y > mouse_player_space_x:
             # Mouse is North of player
-            state.player_direction = (0, -1)
+            state.change_direction((0, -1))
         else:
             # Mouse is strictly East of player
-            state.player_direction = (1, 0)
+            state.change_direction((1, 0))
     else:
         # Mouse is West of player
         if mouse_player_space_y > -mouse_player_space_x:
             # Mouse is South of player
-            state.player_direction = (0, 1)
+            state.change_direction((0, 1))
         elif -mouse_player_space_y > -mouse_player_space_x:
             # Mouse is North of player
-            state.player_direction = (0, -1)
+            state.change_direction((0, -1))
         else:
             # Mouse is strictly West of player
-            state.player_direction = (-1, 0)
+            state.change_direction((-1, 0))
 
     # Reset screen to black
     screen.fill(BLACK)
