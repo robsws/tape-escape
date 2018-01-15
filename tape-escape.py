@@ -63,9 +63,13 @@ class GameState:
                     self.player_position = (x,y)
                     self.tape_end_position = (x,y)
 
-    def move_tape(self, direction, terminal_length):
+    # Methods for updating state based on input
+    def extend_tape(self):
+        # tape goes as far forward as possible
+        # TODO then pushes player back if already against wall
         tape_end_position = self.tape_end_position
         prev_tape_end_position = tape_end_position
+        tape_end_position = vector_add(tape_end_position, self.player_direction)
         # tape edge is where the very tip of the tape end resides, the adjacent square to the tape end position.
         #
         #           0 1 2    
@@ -78,11 +82,11 @@ class GameState:
         # player position (O) = (1,2)
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
-        tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
-        prev_tape_length = tape_length
-        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and prev_tape_length != terminal_length:
+        prev_tape_length = abs(sum(vector_minus(prev_tape_end_position, self.player_position)))
+        tape_length = prev_tape_length + 1
+        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and prev_tape_length != MAX_TAPE_LENGTH:
             prev_tape_end_position = tape_end_position
-            tape_end_position = vector_add(tape_end_position, direction)
+            tape_end_position = vector_add(tape_end_position, self.player_direction)
             tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
             prev_tape_length = tape_length
             tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
@@ -90,20 +94,24 @@ class GameState:
         tape_end_position = prev_tape_end_position
         self.tape_end_position = tape_end_position
 
-    # Methods for updating state based on input
-    def extend_tape(self):
-        # tape goes as far forward as possible
-        # TODO then pushes player back if already against wall
-        self.move_tape(self.player_direction, MAX_TAPE_LENGTH)
-
     def retract_tape(self):
         # tape comes back towards the player as far as possible
         # TODO then pulls player towards it if already against a wall
-        self.move_tape(vector_scalar_multiply(self.player_direction, -1), 0)
+        retract_direction = vector_scalar_multiply(self.player_direction, -1)
+        tape_end_position = self.tape_end_position
+        prev_tape_end_position = tape_end_position
+        tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
+        tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
+        tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
+        while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and tape_length != 0:
+            tape_end_position = vector_add(tape_end_position, retract_direction)
+            tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
+            tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
+        # we want the tape to end up inbetween us and the wall, so use prev tape end position
+        self.tape_end_position = tape_end_position
 
     def change_direction(self, direction):
         # TODO restrict if wall in the way
-        # TODO rotate tape end position too
         self.player_direction = direction
         tape_length = abs(sum(vector_minus(self.tape_end_position, self.player_position)))
         self.tape_end_position = vector_add(self.player_position, vector_scalar_multiply(self.player_direction, tape_length))
