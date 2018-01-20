@@ -223,6 +223,11 @@ while not finished:
                 state.switch_orientation()
             elif event.button == 3: # right click
                 state.retract_tape()
+        # Keyboard cheats
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_2:
+                current_level = 2
+                state = load_new_level_state(2)
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
@@ -273,7 +278,6 @@ while not finished:
     # Load next level if player has reached the goal
     if state.goal_reached():
         current_level += 1
-        print(current_level)
         if current_level <= len(config['Levels']):
             state = load_new_level_state(current_level)
         else:
