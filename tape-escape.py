@@ -9,12 +9,13 @@ GRID_WIDTH = 30
 GRID_HEIGHT = 20
 SCREEN_BORDER = 4
 
-BLACK      =   0,   0,   0
-DARK_GREY  =  30,  30,  30
-LIGHT_GREY = 100, 100, 100
-SILVER     = 200, 200, 200
-RED        = 150,   0,   0
-YELLOW     = 150, 150,   0
+BLACK       =   0,   0,   0
+DARK_GREY   =  30,  30,  30
+LIGHT_GREY  = 100, 100, 100
+SILVER      = 200, 200, 200
+RED         = 150,   0,   0
+YELLOW      = 150, 150,   0
+LIGHT_GREEN =  51, 255, 153
 
 TILE_BORDER = 2
 
@@ -40,14 +41,18 @@ class TileType(Enum):
     SPACE  = 1
     WALL   = 2
     PLAYER = 3
+    PIT = 4
+    GOAL = 5
 
 class GameState:
 
     def __init__(self, level):
         config_tile_type_map = {
-            '.': TileType.SPACE,
+            '-': TileType.SPACE,
             'x': TileType.WALL,
-            'P': TileType.PLAYER
+            'P': TileType.PLAYER,
+            '.': TileType.PIT,
+            'G': TileType.GOAL
         }
         self.player_position = (0,0)
         self.player_direction = (0,-1)
@@ -66,6 +71,8 @@ class GameState:
                 if config_tile_type_map[tile] == TileType.PLAYER:
                     self.player_position = (x,y)
                     self.tape_end_position = (x,y)
+                elif config_tile_type_map[tile] == TileType.GOAL:
+                    self.goal_position = (x,y)
 
     # Methods for updating state based on input
     def extend_tape(self):
@@ -187,11 +194,18 @@ class GameState:
     def switch_orientation(self):
         self.player_orientation *= -1
 
+    def goal_reached(self):
+        return self.player_position == self.tape_end_position == self.goal_position
+
 pygame.init()
 config = configparser.ConfigParser()
 config.read('levels.ini')
-level = config['Levels']['1']
-state = GameState(level)
+
+def load_new_level_state(level):
+    return GameState(config['Levels'][str(level)])
+
+current_level = 1
+state = load_new_level_state(current_level)
 
 tile_width = SCREEN_WIDTH/state.grid_width
 screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -199,6 +213,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 # Main game loop
 finished = False
 while not finished:
+    # Capture input and update game state
     for event in pygame.event.get():
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -255,12 +270,24 @@ while not finished:
     # Reset screen to black
     screen.fill(BLACK)
 
+    # Load next level if player has reached the goal
+    if state.goal_reached():
+        current_level += 1
+        print(current_level)
+        if current_level <= len(config['Levels']):
+            state = load_new_level_state(current_level)
+        else:
+            # TODO: Something should happen when player finishes the game
+            finished = True
+
     # Draw the grid and the objects to the pygame screen
     for x in range(state.grid_width):
         for y in range(state.grid_height):
             tiletype = state.grid[x][y]
             if tiletype == TileType.SPACE or tiletype == TileType.PLAYER:
                 screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+            elif tiletype == TileType.GOAL:
+                screen.fill(LIGHT_GREEN, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
             elif obstruction_coords != None and (x, y) in obstruction_coords:
                 screen.fill(RED, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)                
             elif tiletype == TileType.WALL:
