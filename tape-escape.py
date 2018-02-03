@@ -332,22 +332,6 @@ while not finished:
             # Mouse is strictly West of player
             obstruction_coords = state.change_direction((-1, 0))
 
-    # Load next level if player has reached the goal
-    if state.goal_reached():
-        current_level += 1
-        if current_level <= len(config['Levels']):
-            starting_state = load_new_level_state(current_level)
-            state = deepcopy(starting_state)
-        else:
-            # TODO: Something should happen when player finishes the game
-            finished = True
-    # Put player back at the beginning and flash red if the player has fallen off
-    if state.fallen_off():
-        state = deepcopy(starting_state)
-        screen.fill(RED)
-        pygame.display.flip()
-        sleep(0.2)
-
     # Reset screen to black
     screen.fill(BLACK)
     # Draw the grid and the static objects to the pygame screen
@@ -380,5 +364,26 @@ while not finished:
     
     # Swap the buffers
     pygame.display.flip()
+
+    # Load next level if player has reached the goal
+    if state.goal_reached():
+        current_level += 1
+        if current_level <= len(config['Levels']):
+            starting_state = load_new_level_state(current_level)
+            state = deepcopy(starting_state)
+        else:
+            # TODO: Something should happen when player finishes the game
+            finished = True
+        screen.fill(LIGHT_GREEN)
+        sleep(0.1)
+        pygame.display.flip()
+        sleep(0.2)
+    # Put player back at the beginning and flash red if the player has fallen off
+    elif state.fallen_off():
+        state = deepcopy(starting_state)
+        screen.fill(RED)
+        sleep(0.1)
+        pygame.display.flip()
+        sleep(0.2)
 
 pygame.quit()
