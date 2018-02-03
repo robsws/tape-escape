@@ -23,6 +23,7 @@ SILVER      = 200, 200, 200
 RED         = 150,   0,   0
 YELLOW      = 150, 150,   0
 LIGHT_GREEN =  51, 255, 153
+BROWN       = 204, 102,   0
 
 TILE_BORDER = 2
 
@@ -83,7 +84,7 @@ class GameState:
                 elif re.match(r'[a-z]', tile):
                     self.blocks[tile].append((x,y))
                     self.grid[x][y] = TileType.PIT
-                if config_tile_type_map[tile] == TileType.PLAYER:
+                elif config_tile_type_map[tile] == TileType.PLAYER:
                     self.player_position = (x,y)
                     self.tape_end_position = (x,y)
                     self.grid[x][y] = TileType.SPACE
@@ -351,7 +352,9 @@ while not finished:
     screen.fill(LIGHT_GREEN, [state.goal_position[0] * tile_width + TILE_BORDER, state.goal_position[1] * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
 
     # Draw blocks
-
+    for block_key in state.blocks.keys():
+        for position in state.blocks[block_key]:
+            screen.fill(BROWN, [position[0] * tile_width + TILE_BORDER, position[1] * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
 
     # Draw player
     tape_end_centre = (int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
