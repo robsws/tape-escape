@@ -5,6 +5,7 @@ from itertools import *
 from collections import defaultdict
 from copy import deepcopy
 from time import sleep
+import re
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
 import win_unicode_console
@@ -54,11 +55,11 @@ class GameState:
 
     def __init__(self, level):
         config_tile_type_map = {
-            '-': TileType.SPACE,
-            'x': TileType.WALL,
-            'P': TileType.PLAYER,
+            '*': TileType.SPACE,
+            '0': TileType.WALL,
+            '@': TileType.PLAYER,
             '.': TileType.PIT,
-            'G': TileType.GOAL
+            '+': TileType.GOAL
         }
         self.player_position = (0,0)
         self.player_direction = (0,-1)
@@ -71,14 +72,37 @@ class GameState:
         self.grid_width = len(lines[0])
         self.grid_height = len(lines)
         self.grid = [[TileType.SPACE for y in range(self.grid_height)] for x in range(self.grid_width)]
+        self.blocks = defaultdict(list)
         for y, line in enumerate(lines):
             for x, tile in enumerate(line):
-                self.grid[x][y] = config_tile_type_map[tile]
+                # blocks with the same alphabet letter move as a unit
+                # upper case signifies a space beneath, lower case signifies a pit beneath
+                if re.match(r'[A-Z]', tile):
+                    self.blocks[tile.lower()].append((x,y))
+                    self.grid[x][y] = TileType.SPACE
+                elif re.match(r'[a-z]', tile):
+                    self.blocks[tile].append((x,y))
+                    self.grid[x][y] = TileType.PIT
                 if config_tile_type_map[tile] == TileType.PLAYER:
                     self.player_position = (x,y)
                     self.tape_end_position = (x,y)
+                    self.grid[x][y] = TileType.SPACE
                 elif config_tile_type_map[tile] == TileType.GOAL:
                     self.goal_position = (x,y)
+                    self.grid[x][y] = TileType.SPACE
+                else:
+                    self.grid[x][y] = config_tile_type_map[tile]
+        # Also keep a lookup from grid position -> block type to make checking squares easier
+        self.update_block_grid()
+
+    def update_block_grid(self):
+        # Reset the lookup table
+        self.block_grid = [['' for y in range(self.grid_height)] for x in range(self.grid_width)]
+        # Loop over blocks and store key in respective positions in lookup table
+        for block_key in self.blocks.keys():
+            positions = self.blocks[block_key]
+            for position in positions:
+                self.block_grid[position[0]][position[1]] = block_key
 
     def is_inside_grid(self, position):
         return position[0] > 0 and position[0] < self.grid_width and position[1] > 0 and position[1] < self.grid_height
@@ -229,8 +253,6 @@ class GameState:
                 if self.is_inside_grid(position) and self.grid[position[0]][position[1]] != TileType.PIT:
                     has_fallen_off = False
                     break
-        if has_fallen_off == True:
-            print(self.player_position, self.tape_end_position)            
         return has_fallen_off
 
 
@@ -328,21 +350,25 @@ while not finished:
 
     # Reset screen to black
     screen.fill(BLACK)
-    # Draw the grid and the objects to the pygame screen
+    # Draw the grid and the static objects to the pygame screen
     for x in range(state.grid_width):
         for y in range(state.grid_height):
             tiletype = state.grid[x][y]
-            if tiletype == TileType.SPACE or tiletype == TileType.PLAYER:
+            if tiletype == TileType.SPACE:
                 screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
-            elif tiletype == TileType.GOAL:
-                screen.fill(LIGHT_GREEN, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
             elif obstruction_coords != None and (x, y) in obstruction_coords:
                 screen.fill(RED, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)                
             elif tiletype == TileType.WALL:
                 screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
             if (x, y) in state.circle_points:
                 pygame.draw.circle(screen, BLACK, (int(x * tile_width + tile_width/2), int(y * tile_width + tile_width/2)), 4, 0)
-                
+
+    # Draw goal
+    screen.fill(LIGHT_GREEN, [state.goal_position[0] * tile_width + TILE_BORDER, state.goal_position[1] * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+
+    # Draw blocks
+
+
     # Draw player
     tape_end_centre = (int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
     tape_edge_offset = vector_scalar_multiply(rotate_right(state.player_direction), state.player_orientation * tile_width * 0.66) 
@@ -351,7 +377,7 @@ while not finished:
     pygame.draw.line(screen, YELLOW, tape_end_centre, player_screen_position, 2)
     pygame.draw.line(screen, SILVER, tape_end_centre, tape_edge, 2)
     pygame.draw.circle(screen, RED, player_screen_position, int(tile_width/2), 0)
-
+    
     # Swap the buffers
     pygame.display.flip()
 
