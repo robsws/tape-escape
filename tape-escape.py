@@ -3,6 +3,12 @@ import pygame
 import configparser
 from itertools import *
 from collections import defaultdict
+from copy import deepcopy
+from time import sleep
+
+# Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
+import win_unicode_console
+win_unicode_console.enable()
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 600, 400
 GRID_WIDTH = 30
@@ -73,6 +79,9 @@ class GameState:
                     self.tape_end_position = (x,y)
                 elif config_tile_type_map[tile] == TileType.GOAL:
                     self.goal_position = (x,y)
+
+    def is_inside_grid(self, position):
+        return position[0] > 0 and position[0] < self.grid_width and position[1] > 0 and position[1] < self.grid_height
 
     # Methods for updating state based on input
     def extend_tape(self):
@@ -197,6 +206,34 @@ class GameState:
     def goal_reached(self):
         return self.player_position == self.tape_end_position == self.goal_position
 
+    def fallen_off(self):
+        # Player has fallen off if every square between player and tape end inclusive is a PIT square
+        # Algorithm only works if tape end and player are aligned vertically or horizontally (other states should not arise from movements)
+        # If they aren't, player is considered 'fallen_off' by default.
+        has_fallen_off = True
+        if self.player_position[0] == self.tape_end_position[0]:
+            # Vertically aligned
+            distance = self.tape_end_position[1] - self.player_position[1]
+            step = int(distance / abs(distance)) if distance != 0 else 1
+            for i in range(self.player_position[1], self.tape_end_position[1] + step, step):
+                position = (self.player_position[0], i)
+                if self.is_inside_grid(position) and self.grid[position[0]][position[1]] != TileType.PIT:
+                    has_fallen_off = False
+                    break
+        elif self.player_position[1] == self.tape_end_position[1]:
+            # Horizontally aligned
+            distance = self.tape_end_position[0] - self.player_position[0]
+            step = int(distance / abs(distance)) if distance != 0 else 1
+            for i in range(self.player_position[0], self.tape_end_position[0] + step, step):
+                position = (i, self.player_position[1])
+                if self.is_inside_grid(position) and self.grid[position[0]][position[1]] != TileType.PIT:
+                    has_fallen_off = False
+                    break
+        if has_fallen_off == True:
+            print(self.player_position, self.tape_end_position)            
+        return has_fallen_off
+
+
 pygame.init()
 config = configparser.ConfigParser()
 config.read('levels.ini')
@@ -205,7 +242,8 @@ def load_new_level_state(level):
     return GameState(config['Levels'][str(level)])
 
 current_level = 1
-state = load_new_level_state(current_level)
+starting_state = load_new_level_state(current_level)
+state = deepcopy(starting_state)
 
 tile_width = SCREEN_WIDTH/state.grid_width
 screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -272,18 +310,24 @@ while not finished:
             # Mouse is strictly West of player
             obstruction_coords = state.change_direction((-1, 0))
 
-    # Reset screen to black
-    screen.fill(BLACK)
-
     # Load next level if player has reached the goal
     if state.goal_reached():
         current_level += 1
         if current_level <= len(config['Levels']):
-            state = load_new_level_state(current_level)
+            starting_state = load_new_level_state(current_level)
+            state = deepcopy(starting_state)
         else:
             # TODO: Something should happen when player finishes the game
             finished = True
+    # Put player back at the beginning and flash red if the player has fallen off
+    if state.fallen_off():
+        state = deepcopy(starting_state)
+        screen.fill(RED)
+        pygame.display.flip()
+        sleep(0.2)
 
+    # Reset screen to black
+    screen.fill(BLACK)
     # Draw the grid and the objects to the pygame screen
     for x in range(state.grid_width):
         for y in range(state.grid_height):
