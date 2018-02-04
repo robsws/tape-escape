@@ -105,6 +105,29 @@ class GameState:
             for position in positions:
                 self.block_grid[position[0]][position[1]] = block_key
 
+    def can_block_move(self, block_key, direction):
+        # Can the given block move in the given direction without obstruction?
+        # Move the positions in the block in the given direction and check if the resulting block
+        # overlaps with a wall.
+        # If it overlaps with another block, check that block can move too.
+        for position in self.blocks[block_key]:
+            new_position = vector_add(position, direction)
+            new_pos_block_key = self.block_grid[new_position[0]][new_position[1]]
+            other_blocks_to_check = []
+            if self.grid[new_position[0]][new_position[1]] == TileType.WALL:
+                # There's a wall in the way.
+                return False
+            elif new_pos_block_key != block_key and new_pos_block_key != '':
+                # There's another block in our path, check that can move too.
+                other_blocks_to_check.append(new_pos_block_key)
+            # If we didn't find any walls in the way, check any adjacent blocks we found.
+            if not all(map(lambda x: self.can_block_move(x, direction), other_blocks_to_check)):
+                # At least one of the blocks couldn't move, so we can't move either.
+                return False
+
+    def move_block(self, block_key, direction):
+        # Move the given block in the given direction as far as possible
+
     def is_inside_grid(self, position):
         return position[0] > 0 and position[0] < self.grid_width and position[1] > 0 and position[1] < self.grid_height
 
@@ -128,16 +151,29 @@ class GameState:
         tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
         prev_tape_length = abs(sum(vector_minus(prev_tape_end_position, self.player_position)))
         tape_length = prev_tape_length + 1
-        if self.grid[tape_end_position[0]][tape_end_position[1]] == TileType.WALL or self.grid[tape_edge_position[0]][tape_edge_position[1]] == TileType.WALL:
+        if ( # the tape end is immediately in front of a moveable block
+            self.block_grid[tape_end_position[0]][tape_end_position[1]] != '' or
+            self.block_grid[tape_edge_position[0]][tape_edge_position[1]] != ''
+            # TODO check if the block can move any further
+        ):
+            # TODO push the block as far as it will go
+        elif ( # the tape end is immediately in front of a wall or a block that cannot move
+            self.grid[tape_end_position[0]][tape_end_position[1]] == TileType.WALL or
+            self.grid[tape_edge_position[0]][tape_edge_position[1]] == TileType.WALL
+            # TODO check if the block can move any further
+        ):
             # Push player away from wall
             prev_player_position = self.player_position
             player_position = vector_add(prev_player_position, vector_scalar_multiply(self.player_direction, -1))
-            while self.grid[player_position[0]][player_position[1]] != TileType.WALL and prev_tape_length != MAX_TAPE_LENGTH:
+            while (
+                self.grid[player_position[0]][player_position[1]] != TileType.WALL and
+                prev_tape_length != MAX_TAPE_LENGTH
+            ):
                 prev_player_position = player_position
                 player_position = vector_add(player_position, vector_scalar_multiply(self.player_direction, -1))
                 prev_tape_length = tape_length
                 tape_length = abs(sum(vector_minus(prev_tape_end_position, player_position)))
-            self.player_position = prev_player_position           
+            self.player_position = prev_player_position
         else:
             # Extend tape as far as it can go
             while (
@@ -146,6 +182,7 @@ class GameState:
                 self.block_grid[tape_end_position[0]][tape_end_position[1]] == '' and
                 self.block_grid[tape_edge_position[0]][tape_edge_position[1]] == '' and
                 prev_tape_length != MAX_TAPE_LENGTH
+                # TODO and block can still move in the direction
             ):
                 prev_tape_end_position = tape_end_position
                 tape_end_position = vector_add(tape_end_position, self.player_direction)
@@ -157,7 +194,7 @@ class GameState:
 
     def retract_tape(self):
         # tape comes back towards the player as far as possible
-        # TODO then pulls player towards it if already against a wall
+        # then pulls player towards it if already against a wall
         prev_tape_end_position = self.tape_end_position
         tape_end_position = self.tape_end_position
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
