@@ -140,7 +140,13 @@ class GameState:
             self.player_position = prev_player_position           
         else:
             # Extend tape as far as it can go
-            while self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and prev_tape_length != MAX_TAPE_LENGTH:
+            while (
+                self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and
+                self.grid[tape_edge_position[0]][tape_edge_position[1]] != TileType.WALL and
+                self.block_grid[tape_end_position[0]][tape_end_position[1]] == '' and
+                self.block_grid[tape_edge_position[0]][tape_edge_position[1]] == '' and
+                prev_tape_length != MAX_TAPE_LENGTH
+            ):
                 prev_tape_end_position = tape_end_position
                 tape_end_position = vector_add(tape_end_position, self.player_direction)
                 tape_edge_position = vector_add(tape_end_position, tape_edge_offset)
