@@ -311,23 +311,23 @@ class GameState:
         for x in range(max(0, self.player_position[0] - tape_arc_radius), min(self.player_position[0] + 1, GRID_WIDTH)):
             for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
                 # Check for obstructions in North West quadrant
-                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((-1,0),(0,-1))].add((x,y)) # west to north
                     obstructions[((0,-1),(-1,0))].add((x,y)) # north to west
             for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
                 # Check for obstructions in South West quadrant
-                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((-1,0),(0,1))].add((x,y)) # west to south
                     obstructions[((0,1),(-1,0))].add((x,y)) # south to west
         for x in range(max(0, self.player_position[0]), min(self.player_position[0] + tape_arc_radius, GRID_WIDTH)):
             for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
                 # Check for obstructions in North East quadrant
-                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((0,-1),(1,0))].add((x,y)) # north to east
                     obstructions[((1,0),(0,-1))].add((x,y)) # east to north
             for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
                 # Check for obstructions in South East quadrant
-                if self.grid[x][y] == TileType.WALL and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
+                if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((0,1),(1,0))].add((x,y)) # south to east
                     obstructions[((1,0),(0,1))].add((x,y)) # east to south
 
@@ -455,9 +455,7 @@ while not finished:
         for y in range(state.grid_height):
             tiletype = state.grid[x][y]
             if tiletype == TileType.SPACE:
-                screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
-            elif obstruction_coords != None and (x, y) in obstruction_coords:
-                screen.fill(RED, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)                
+                screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)              
             elif tiletype == TileType.WALL:
                 screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
             if (x, y) in state.circle_points:
@@ -470,6 +468,12 @@ while not finished:
     for block_key in state.blocks.keys():
         for position in state.blocks[block_key]:
             screen.fill(BROWN, [position[0] * tile_width + TILE_BORDER, position[1] * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+
+    # Draw rotation obstructions
+    for x in range(state.grid_width):
+        for y in range(state.grid_height):
+            if obstruction_coords != None and (x, y) in obstruction_coords:
+                screen.fill(RED, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
 
     # Draw player
     tape_end_centre = (int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
