@@ -45,6 +45,11 @@ def rotate_right(vec):
     # Give the compass vector rotated 90 degrees clockwise
     return (vec[1] * -1, vec[0])
 
+def get_tape_edge_position(tape_end_position, direction, orientation):
+    # Find the position of the tape edge (the hook coming out of the end of the tape) given the tape end, direction of player and orientation of tape.
+    tape_edge_offset = vector_scalar_multiply(rotate_right(direction), orientation)
+    return vector_add(tape_end_position, tape_edge_offset)
+
 class TileType(Enum):
     SPACE  = 1
     WALL   = 2
@@ -156,6 +161,18 @@ class GameState:
     def is_inside_grid(self, position):
         return position[0] > 0 and position[0] < self.grid_width and position[1] > 0 and position[1] < self.grid_height
 
+    def is_tape_edge_inside_wall_or_block(self, tape_edge_position, direction):
+        # Check if the tape edge position given with the player facing the given direction would put the tape within a wall or block (i.e. invalid state)
+        tape_edge_position_offset = vector_add(tape_edge_position, direction)
+        return (
+            self.grid[tape_edge_position[0]][tape_edge_position[1]] == TileType.WALL and
+            self.grid[tape_edge_position_offset[0]][tape_edge_position_offset[1]] == TileType.WALL
+        ) or (
+            self.block_grid[tape_edge_position[0]][tape_edge_position[1]] != '' and
+            self.block_grid[tape_edge_position_offset[0]][tape_edge_position_offset[1]] != '' and
+            self.block_grid[tape_edge_position[0]][tape_edge_position[1]] == self.block_grid[tape_edge_position_offset[0]][tape_edge_position_offset[1]]
+        )
+
     # Methods for updating state based on input
     def extend_tape(self):
         # tape goes as far forward as possible
@@ -180,8 +197,7 @@ class GameState:
         next_tape_end_position = vector_add(tape_end_position, self.player_direction)
 
         # Next tape edge position is derived from next tape end position
-        tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
-        next_tape_edge_position = vector_add(next_tape_end_position, tape_edge_offset)
+        next_tape_edge_position = get_tape_edge_position(next_tape_end_position, self.player_direction, self.player_orientation)
 
         # Tape length grows by 1 for each square moved.
         tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
@@ -266,7 +282,7 @@ class GameState:
             ):
                 tape_end_position = next_tape_end_position
                 next_tape_end_position = vector_add(next_tape_end_position, self.player_direction)
-                next_tape_edge_position = vector_add(next_tape_end_position, tape_edge_offset)
+                next_tape_edge_position = get_tape_edge_position(next_tape_end_position, self.player_direction, self.player_orientation)
                 tape_length = next_tape_length
                 next_tape_length = abs(sum(vector_minus(next_tape_end_position, self.player_position)))
             # we want the tape to end up inbetween us and the wall, so use current tape end position rather than next
@@ -286,8 +302,7 @@ class GameState:
         current_tape_end_position = self.tape_end_position
 
         # Tape edge position is derived from tape end position
-        tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
-        current_tape_edge_position = vector_add(current_tape_end_position, tape_edge_offset)
+        current_tape_edge_position = get_tape_edge_position(current_tape_end_position, self.player_direction, self.player_orientation)
         
         # Tape length shrinks by 1 for each square moved.
         tape_length = abs(sum(vector_minus(current_tape_end_position, self.player_position)))
@@ -340,19 +355,31 @@ class GameState:
                 next_tape_length != 0
             ):
                 current_tape_end_position = vector_add(current_tape_end_position, reverse_player_direction)
-                current_tape_edge_position = vector_add(current_tape_end_position, tape_edge_offset)
+                current_tape_edge_position = get_tape_edge_position(current_tape_end_position, self.player_direction, self.player_orientation)
                 next_tape_length = abs(sum(vector_minus(current_tape_end_position, self.player_position)))
             self.tape_end_position = current_tape_end_position
 
     def change_direction(self, direction):
         # Changes the player_direction to 'direction', provided there are no obstructions
         # Returns the list of obstruction coordinates or None if no obstructions found.
+
         # Skip if target direction is already the way we are facing or opposite the way we are facing (only 90 degree moves are valid)
         if self.player_direction == direction or self.player_direction == vector_scalar_multiply(direction, -1):
             return None
+
         # Add one to the tape length for the purposes of calculating the arc of movement.
         tape_length = abs(sum(vector_minus(self.tape_end_position, self.player_position)))
         tape_arc_radius = tape_length + 1
+
+        # Restrict rotation if tape edge will end up inside a wall or inside two segments of the same block.
+        future_tape_end_position = vector_add(self.player_position, vector_scalar_multiply(direction, tape_length))
+        future_tape_edge_position = get_tape_edge_position(future_tape_end_position, direction, self.player_orientation)
+        
+        if self.is_tape_edge_inside_wall_or_block(future_tape_edge_position, direction):
+            # Prevent player rotating and pass back the two positions either side of the tape edge as the obstructions.
+            future_tape_edge_position_offset = vector_add(future_tape_edge_position, direction)     
+            return set([future_tape_edge_position, future_tape_edge_position_offset])
+
         # Scan across the bounding square whose sides are length t*2 where t = tape radius
         # and for each point, if it is a wall and is within the circle traced by the tape
         # it counts as an obstruction.
@@ -386,14 +413,22 @@ class GameState:
         if (self.player_direction, direction) not in obstructions:
             # Intended rotation is not obstructed, update state.
             self.player_direction = direction
-            self.tape_end_position = vector_add(self.player_position, vector_scalar_multiply(self.player_direction, tape_length))
+            self.tape_end_position = future_tape_end_position
         else:
             # Intended rotation is obstructed, return a set of the obstructions.
             return obstructions[(self.player_direction, direction)]
         return None
 
     def switch_orientation(self):
-        self.player_orientation *= -1
+        # Make sure that tape edge won't end up inside wall or block
+        future_orientation = self.player_orientation * -1
+        future_tape_edge_position = get_tape_edge_position(self.tape_end_position, self.player_direction, future_orientation)
+        if self.is_tape_edge_inside_wall_or_block(future_tape_edge_position, self.player_direction):
+            future_tape_edge_position_offset = vector_add(future_tape_edge_position, self.player_direction)     
+            return set([future_tape_edge_position, future_tape_edge_position_offset])
+        # Flip the orientation
+        self.player_orientation = future_orientation
+        return None
 
     def goal_reached(self):
         return self.player_position == self.tape_end_position == self.goal_position
@@ -442,13 +477,14 @@ screen = pygame.display.set_mode(SCREEN_SIZE)
 finished = False
 while not finished:
     # Capture input and update game state
+    obstruction_coords = None
     for event in pygame.event.get():
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1: # left click
                 state.extend_tape()
             elif event.button == 2: # middle click
-                state.switch_orientation()
+                obstruction_coords = state.switch_orientation()
             elif event.button == 3: # right click
                 state.retract_tape()
         # Keyboard cheats
@@ -476,7 +512,6 @@ while not finished:
     # w X e
     #  / \
     # / s \
-    obstruction_coords = None
     if mouse_player_space_x > 0:
         # Mouse is East of player
         if mouse_player_space_y > mouse_player_space_x:
