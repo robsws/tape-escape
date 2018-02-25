@@ -194,21 +194,25 @@ class GameState:
 
         # Figure out if the tape end/edge is next to a block and whether that block is obstructed
         # in the direction of extension.
-        # Store the result for simplicity as it is used in multiple conditions
         tape_end_next_to_block = self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] != ''
         tape_edge_next_to_block = self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] != ''
         tape_end_block_is_obstructed = tape_end_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]], self.player_direction)
         tape_edge_block_is_obstructed = tape_edge_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]], self.player_direction)
+        
         # Figure out if the player is next to a block and whether that block is obstructed
         player_next_to_block = self.block_grid[next_player_position[0]][next_player_position[1]] != ''
         player_block_is_obstructed = player_next_to_block and not self.block_can_move_one(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction)
 
-        if ( # the tape end is immediately in front of a wall or a block that cannot move
+        # If the tape end is immediately in front of a wall or a block that cannot move, push the player away from the wall/block.
+        # Otherwise, extend the tape as far as it will go.
+        if ( 
             self.grid[next_tape_end_position[0]][next_tape_end_position[1]] == TileType.WALL or
             self.grid[next_tape_edge_position[0]][next_tape_edge_position[1]] == TileType.WALL or
             (tape_end_next_to_block and tape_end_block_is_obstructed) or
             (tape_edge_next_to_block and tape_edge_block_is_obstructed)
-        ): # Push player away from wall/block
+        ):
+            # Push player away from wall/block.
+            
             # First move any blocks the player is resting against.
             # Check if tape end is next to a block and whether it is obstructed or not.
             if (
@@ -220,6 +224,7 @@ class GameState:
             ):
                 # Move the block next to the player.
                 self.move_block(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction, MAX_TAPE_LENGTH - tape_length)
+            
             # Move player square by square until a wall, block or the max tape length is hit
             while (
                 self.grid[next_player_position[0]][next_player_position[1]] != TileType.WALL and
@@ -232,7 +237,9 @@ class GameState:
                 next_tape_length = abs(sum(vector_minus(tape_end_position, next_player_position)))
             self.player_position = player_position
 
-        else: # Extend tape as far as it can go
+        else:
+            # Extend tape as far as it can go.
+
             # First move any blocks the tape is resting against.
             # Check if tape end is next to a block and whether it is obstructed or not.
             if tape_end_next_to_block and not tape_end_block_is_obstructed:
@@ -268,29 +275,74 @@ class GameState:
     def retract_tape(self):
         # tape comes back towards the player as far as possible
         # then pulls player towards it if already against a wall
-        tape_end_position = self.tape_end_position
-        next_tape_end_position = self.tape_end_position
+
+        # Initialise various positions
+        # next_* variables represent where the position will be after moving one square.
+        # respective other position variables represent where the position currently is.
+
+        # When retracting tape, tape end always moves in the direction opposite the direction the player is facing (If it moves at all).
+        # We use current tape end position rather than next here because the actual current position is the first one we want to check for blocks.
+        # This is because the tape end position is considered to be the first square towards the player from the actual tape end (which appears in-between blocks)
+        current_tape_end_position = self.tape_end_position
+
+        # Tape edge position is derived from tape end position
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
-        next_tape_edge_position = vector_add(next_tape_end_position, tape_edge_offset)
-        next_tape_length = abs(sum(vector_minus(next_tape_end_position, self.player_position)))
-        if self.grid[self.tape_end_position[0]][self.tape_end_position[1]] == TileType.WALL or self.grid[next_tape_edge_position[0]][next_tape_edge_position[1]] == TileType.WALL:
+        current_tape_edge_position = vector_add(current_tape_end_position, tape_edge_offset)
+        
+        # Tape length shrinks by 1 for each square moved.
+        tape_length = abs(sum(vector_minus(current_tape_end_position, self.player_position)))
+        next_tape_length = tape_length
+        
+        # Store reverse of player direction for convenience.
+        reverse_player_direction = vector_scalar_multiply(self.player_direction, -1)
+
+        # Figure out if the tape edge is next to a block and whether that block is obstructed
+        # in the direction of retraction.
+        # Should never be possible for block to be between player and tape end, so don't bother checking tape end or player.
+        tape_edge_next_to_block = self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]] != ''
+        tape_edge_block_is_obstructed = tape_edge_next_to_block and not self.block_can_move_one(self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]], reverse_player_direction)
+
+        # If the tape end/edge is immediately behind a wall or a block that cannot move, pull the player towards the tape end.
+        # Otherwise, retract the tape as far as it will go.
+        if (
+            self.grid[self.tape_end_position[0]][self.tape_end_position[1]] == TileType.WALL or
+            self.grid[current_tape_edge_position[0]][current_tape_edge_position[1]] == TileType.WALL or
+            (tape_edge_next_to_block and tape_edge_block_is_obstructed)
+        ):
+            # Pull the player towards the tape end.
+            
+            # Move player square by square until the tape end has been reached.
             player_position = self.player_position
             next_player_position = vector_add(player_position, self.player_direction)
             tape_length = next_tape_length
             next_tape_length -= 1
-            while self.grid[next_player_position[0]][next_player_position[1]] != TileType.WALL and tape_length != 0:
+            while tape_length != 0:
                 player_position = next_player_position
                 next_player_position = vector_add(next_player_position, self.player_direction)
                 tape_length = next_tape_length
-                next_tape_length = abs(sum(vector_minus(tape_end_position, next_player_position)))
-            # we want the tape to end up inbetween us and the wall, so use current tape end position rather than next
+                next_tape_length = abs(sum(vector_minus(current_tape_end_position, next_player_position)))
             self.player_position = player_position
+
         else:
-            while self.grid[next_tape_end_position[0]][next_tape_end_position[1]] != TileType.WALL and self.grid[next_tape_edge_position[0]][next_tape_edge_position[1]] != TileType.WALL and next_tape_length != 0:
-                next_tape_end_position = vector_add(next_tape_end_position, vector_scalar_multiply(self.player_direction, -1))
-                next_tape_edge_position = vector_add(next_tape_end_position, tape_edge_offset)
-                next_tape_length = abs(sum(vector_minus(next_tape_end_position, self.player_position)))
-            self.tape_end_position = next_tape_end_position
+            # Retract the tape as far as it will go.
+
+            # If the tape edge is hooked on a moveable block that can move, move it as far as it will go.
+            if tape_edge_next_to_block and not tape_edge_block_is_obstructed:
+                # Move the block on the tape edge.
+                self.move_block(self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]], reverse_player_direction, tape_length)
+            
+            # Now retract the tape square by square as far as it will go.
+            # As blocks have already moved they can be treated like walls now.
+            while (
+                self.grid[current_tape_end_position[0]][current_tape_end_position[1]] != TileType.WALL and
+                self.grid[current_tape_edge_position[0]][current_tape_edge_position[1]] != TileType.WALL and
+                self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]] == '' and
+                next_tape_length != 0
+            ):
+                current_tape_end_position = vector_add(current_tape_end_position, reverse_player_direction)
+                current_tape_edge_position = vector_add(current_tape_end_position, tape_edge_offset)
+                next_tape_length = abs(sum(vector_minus(current_tape_end_position, self.player_position)))
+            self.tape_end_position = current_tape_end_position
 
     def change_direction(self, direction):
         # Changes the player_direction to 'direction', provided there are no obstructions
