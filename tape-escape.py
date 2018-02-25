@@ -570,6 +570,11 @@ while not finished:
                 screen.fill(DARK_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)              
             elif tiletype == TileType.WALL:
                 screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, y * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+                if x < state.grid_width - 1 and state.grid[x+1][y] == TileType.WALL:
+                    screen.fill(LIGHT_GREY, [(x + 1) * tile_width - TILE_BORDER, y * tile_width + TILE_BORDER, TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+                if y < state.grid_height - 1 and state.grid[x][y+1] == TileType.WALL:
+                    screen.fill(LIGHT_GREY, [x * tile_width + TILE_BORDER, (y + 1) * tile_width - TILE_BORDER, tile_width - TILE_BORDER*2, TILE_BORDER*2], 0)
+
             if (x, y) in state.circle_points:
                 pygame.draw.circle(screen, BLACK, (int(x * tile_width + tile_width/2), int(y * tile_width + tile_width/2)), 4, 0)
 
