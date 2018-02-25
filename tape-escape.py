@@ -174,14 +174,23 @@ class GameState:
         # Initialise various positions
         # next_* variables represent where the position will be after moving one square.
         # respective other position variables represent where the position currently is.
+
+        # When extending tape, tape end always moves in the direction the player is facing (If it moves at all).
         tape_end_position = self.tape_end_position
         next_tape_end_position = vector_add(tape_end_position, self.player_direction)
+
+        # Next tape edge position is derived from next tape end position
         tape_edge_offset = vector_scalar_multiply(rotate_right(self.player_direction), self.player_orientation)
         next_tape_edge_position = vector_add(next_tape_end_position, tape_edge_offset)
+
+        # Tape length grows by 1 for each square moved.
         tape_length = abs(sum(vector_minus(tape_end_position, self.player_position)))
         next_tape_length = tape_length + 1
+
+        # When extending tape, player will always move in opposite direction to the one they are facing (If they move at all).
         player_position = self.player_position
-        next_player_position = vector_add(player_position, vector_scalar_multiply(self.player_direction, -1))
+        reverse_player_direction = vector_scalar_multiply(self.player_direction, -1)
+        next_player_position = vector_add(player_position, reverse_player_direction)
 
         # Figure out if the tape end/edge is next to a block and whether that block is obstructed
         # in the direction of extension.
@@ -191,7 +200,8 @@ class GameState:
         tape_end_block_is_obstructed = tape_end_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]], self.player_direction)
         tape_edge_block_is_obstructed = tape_edge_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]], self.player_direction)
         # Figure out if the player is next to a block and whether that block is obstructed
-        # player_next_to_block = self.
+        player_next_to_block = self.block_grid[next_player_position[0]][next_player_position[1]] != ''
+        player_block_is_obstructed = player_next_to_block and not self.block_can_move_one(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction)
 
         if ( # the tape end is immediately in front of a wall or a block that cannot move
             self.grid[next_tape_end_position[0]][next_tape_end_position[1]] == TileType.WALL or
@@ -200,7 +210,16 @@ class GameState:
             (tape_edge_next_to_block and tape_edge_block_is_obstructed)
         ): # Push player away from wall/block
             # First move any blocks the player is resting against.
-            
+            # Check if tape end is next to a block and whether it is obstructed or not.
+            if (
+                player_next_to_block and
+                not player_block_is_obstructed and
+                # Block must not be the same one that is being pushed against!
+                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] and
+                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]]
+            ):
+                # Move the block next to the player.
+                self.move_block(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction, MAX_TAPE_LENGTH - tape_length)
             # Move player square by square until a wall, block or the max tape length is hit
             while (
                 self.grid[next_player_position[0]][next_player_position[1]] != TileType.WALL and
@@ -208,7 +227,7 @@ class GameState:
                 tape_length != MAX_TAPE_LENGTH
             ):
                 player_position = next_player_position
-                next_player_position = vector_add(next_player_position, vector_scalar_multiply(self.player_direction, -1))
+                next_player_position = vector_add(next_player_position, reverse_player_direction)
                 tape_length = next_tape_length
                 next_tape_length = abs(sum(vector_minus(tape_end_position, next_player_position)))
             self.player_position = player_position
