@@ -178,7 +178,7 @@ class GameState:
         tape_length = prev_tape_length + 1
         # Figure out if the tape end/edge is next to a block and whether that block is obstructed
         # in the direction of extension.
-        # Store the result for simplicity as it is used in multiple conditions.ArithmeticError
+        # Store the result for simplicity as it is used in multiple conditions
         tape_end_next_to_block = self.block_grid[tape_end_position[0]][tape_end_position[1]] != ''
         tape_edge_next_to_block = self.block_grid[tape_edge_position[0]][tape_edge_position[1]] != ''
         tape_end_block_is_obstructed = tape_end_next_to_block and not self.block_can_move_one(self.block_grid[tape_end_position[0]][tape_end_position[1]], self.player_direction)
@@ -193,23 +193,26 @@ class GameState:
             # Push player away from wall/block
             prev_player_position = self.player_position
             player_position = vector_add(prev_player_position, vector_scalar_multiply(self.player_direction, -1))
+            # Move player square by square until a wall, block or the max tape length is hit
             while (
                 self.grid[player_position[0]][player_position[1]] != TileType.WALL and
+                self.block_grid[player_position[0]][player_position[1]] == '' and
                 prev_tape_length != MAX_TAPE_LENGTH
-                # TODO should be able to push blocks this way too
             ):
                 prev_player_position = player_position
                 player_position = vector_add(player_position, vector_scalar_multiply(self.player_direction, -1))
                 prev_tape_length = tape_length
                 tape_length = abs(sum(vector_minus(prev_tape_end_position, player_position)))
             self.player_position = prev_player_position
-        else:
-            # Extend tape as far as it can go
+
+        else: # Extend tape as far as it can go
             # First move any blocks in the way
-            # Check if tape end and edge is to a block and whether it is obstructed or not.
+            # Check if tape end is next to a block and whether it is obstructed or not.
             if tape_end_next_to_block and not tape_end_block_is_obstructed:
                 # Move the block on the tape end.
                 self.move_block(self.block_grid[tape_end_position[0]][tape_end_position[1]], self.player_direction, MAX_TAPE_LENGTH - prev_tape_length)
+            # Check if tape edge is next to a block and whether it is obstructed or not.
+            # Must be a separate block to one found on the tape end (that one has already been moved by this point)
             if (
                 self.block_grid[tape_end_position[0]][tape_end_position[1]] != self.block_grid[tape_edge_position[0]][tape_edge_position[1]] and
                 tape_edge_next_to_block and
@@ -218,6 +221,7 @@ class GameState:
                 # Move the block on the tape edge.
                 self.move_block(self.block_grid[tape_edge_position[0]][tape_edge_position[1]], self.player_direction, MAX_TAPE_LENGTH - prev_tape_length)
             
+            # Move the tape square by square until it can no longer move
             # Blocks are now moved as far as they will go, so we can treat them like walls.
             while (
                 self.grid[tape_end_position[0]][tape_end_position[1]] != TileType.WALL and
