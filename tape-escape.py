@@ -6,6 +6,7 @@ from collections import defaultdict
 from copy import deepcopy
 from time import sleep
 import re
+import pdb
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
 import win_unicode_console
@@ -229,62 +230,75 @@ class GameState:
         ):
             # Push player away from wall/block.
             
-            # First move any blocks the player is resting against.
-            # Check if tape end is next to a block and whether it is obstructed or not.
-            if (
-                player_next_to_block and
-                not player_block_is_obstructed and
-                # Block must not be the same one that is being pushed against!
-                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] and
-                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]]
-            ):
-                # Move the block next to the player.
-                self.move_block(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction, MAX_TAPE_LENGTH - tape_length)
-            
-            # Move player square by square until a wall, block or the max tape length is hit
+            # Move player square by square until a wall, obstructed block or the max tape length is hit
             while (
                 self.grid[next_player_position[0]][next_player_position[1]] != TileType.WALL and
-                self.block_grid[next_player_position[0]][next_player_position[1]] == '' and
+                (not player_next_to_block or not player_block_is_obstructed) and
                 tape_length != MAX_TAPE_LENGTH
             ):
+                # First move any blocks the player is resting against.
+                # Check if tape end is next to a block and whether it is obstructed or not.
+                if (
+                    player_next_to_block and not player_block_is_obstructed and
+                    # Block must not be the same one that is being pushed against!
+                    self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] and
+                    self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]]
+                ):
+                    # Move the block next to the player.
+                    self.move_block_one(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction)
+                
+                # Move the player position by one.
                 player_position = next_player_position
                 next_player_position = vector_add(next_player_position, reverse_player_direction)
                 tape_length = next_tape_length
                 next_tape_length = abs(sum(vector_minus(tape_end_position, next_player_position)))
+
+                # Check again if any blocks in the way are obstructed.
+                player_next_to_block = self.block_grid[next_player_position[0]][next_player_position[1]] != ''
+                player_block_is_obstructed = player_next_to_block and not self.block_can_move_one(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction)
+
             self.player_position = player_position
 
         else:
             # Extend tape as far as it can go.
-
-            # First move any blocks the tape is resting against.
-            # Check if tape end is next to a block and whether it is obstructed or not.
-            if tape_end_next_to_block and not tape_end_block_is_obstructed:
-                # Move the block on the tape end.
-                self.move_block(self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]], self.player_direction, MAX_TAPE_LENGTH - tape_length)
-            # Check if tape edge is next to a block and whether it is obstructed or not.
-            # Must be a separate block to one found on the tape end (that one has already been moved by this point)
-            if (
-                self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] and
-                tape_edge_next_to_block and
-                not tape_edge_block_is_obstructed
-            ):
-                # Move the block on the tape edge.
-                self.move_block(self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]], self.player_direction, MAX_TAPE_LENGTH - tape_length)
             
-            # Move the tape square by square until it can no longer move
-            # Blocks are now moved as far as they will go, so we can treat them like walls.
+            # Move the tape square by square until it can no longer move.
             while (
                 self.grid[next_tape_end_position[0]][next_tape_end_position[1]] != TileType.WALL and
                 self.grid[next_tape_edge_position[0]][next_tape_edge_position[1]] != TileType.WALL and
-                self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] == '' and
-                self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] == '' and
+                (not tape_end_next_to_block or not tape_end_block_is_obstructed) and
+                (not tape_edge_next_to_block or not tape_edge_block_is_obstructed) and
                 tape_length != MAX_TAPE_LENGTH
             ):
+                # First move any blocks the tape is resting against.
+
+                # Check if tape end is next to a block and whether it is obstructed or not.
+                if tape_end_next_to_block and not tape_end_block_is_obstructed:
+                    # Move the block on the tape end.
+                    self.move_block_one(self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]], self.player_direction)
+                
+                # Check if tape edge is next to a block and whether it is obstructed or not.
+                # Must be a separate block to one found on the tape end (that one has already been moved by this point)
+                if (
+                    self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] and
+                    tape_edge_next_to_block and not tape_edge_block_is_obstructed
+                ):
+                    # Move the block on the tape edge.
+                    self.move_block_one(self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]], self.player_direction)
+                
+                # Move tape end forward by one.
                 tape_end_position = next_tape_end_position
                 next_tape_end_position = vector_add(next_tape_end_position, self.player_direction)
                 next_tape_edge_position = get_tape_edge_position(next_tape_end_position, self.player_direction, self.player_orientation)
                 tape_length = next_tape_length
                 next_tape_length = abs(sum(vector_minus(next_tape_end_position, self.player_position)))
+
+                # Check again if any blocks in the way are obstructed.
+                tape_end_next_to_block = self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] != ''
+                tape_edge_next_to_block = self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] != ''
+                tape_end_block_is_obstructed = tape_end_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]], self.player_direction)
+                tape_edge_block_is_obstructed = tape_edge_next_to_block and not self.block_can_move_one(self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]], self.player_direction)
+                
             # we want the tape to end up inbetween us and the wall, so use current tape end position rather than next
             self.tape_end_position = tape_end_position
 
@@ -340,23 +354,28 @@ class GameState:
 
         else:
             # Retract the tape as far as it will go.
-
-            # If the tape edge is hooked on a moveable block that can move, move it as far as it will go.
-            if tape_edge_next_to_block and not tape_edge_block_is_obstructed:
-                # Move the block on the tape edge.
-                self.move_block(self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]], reverse_player_direction, tape_length)
             
             # Now retract the tape square by square as far as it will go.
-            # As blocks have already moved they can be treated like walls now.
             while (
                 self.grid[current_tape_end_position[0]][current_tape_end_position[1]] != TileType.WALL and
                 self.grid[current_tape_edge_position[0]][current_tape_edge_position[1]] != TileType.WALL and
-                self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]] == '' and
+                (not tape_edge_next_to_block or not tape_edge_block_is_obstructed) and
                 next_tape_length != 0
             ):
+                # If the tape edge is hooked on a moveable block that can move, move it as far as it will go.
+                if tape_edge_next_to_block and not tape_edge_block_is_obstructed:
+                    # Move the block on the tape edge.
+                    self.move_block_one(self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]], reverse_player_direction)
+
+                # Move the tape end by one towards the player.
                 current_tape_end_position = vector_add(current_tape_end_position, reverse_player_direction)
                 current_tape_edge_position = get_tape_edge_position(current_tape_end_position, self.player_direction, self.player_orientation)
                 next_tape_length = abs(sum(vector_minus(current_tape_end_position, self.player_position)))
+
+                # Check again if the tape edge has caught on a moveable block and whether that block is obstructed.
+                tape_edge_next_to_block = self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]] != ''
+                tape_edge_block_is_obstructed = tape_edge_next_to_block and not self.block_can_move_one(self.block_grid[current_tape_edge_position[0]][current_tape_edge_position[1]], reverse_player_direction)
+
             self.tape_end_position = current_tape_end_position
 
     def change_direction(self, direction):
@@ -473,6 +492,8 @@ state = deepcopy(starting_state)
 tile_width = SCREEN_WIDTH/state.grid_width
 screen = pygame.display.set_mode(SCREEN_SIZE)
 
+enter_debugger = False
+
 # Main game loop
 finished = False
 while not finished:
@@ -481,6 +502,8 @@ while not finished:
     for event in pygame.event.get():
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if enter_debugger:
+                pdb.set_trace()
             if event.button == 1: # left click
                 state.extend_tape()
             elif event.button == 2: # middle click
@@ -492,6 +515,8 @@ while not finished:
             if event.key == pygame.K_2:
                 current_level = 2
                 state = load_new_level_state(2)
+            elif event.key == pygame.K_d:
+                enter_debugger = True
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
