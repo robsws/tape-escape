@@ -585,6 +585,10 @@ while not finished:
     for block_key in state.blocks.keys():
         for position in state.blocks[block_key]:
             screen.fill(BROWN, [position[0] * tile_width + TILE_BORDER, position[1] * tile_width + TILE_BORDER, tile_width - TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+            if position[0] < state.grid_width - 1 and state.block_grid[position[0]+1][position[1]] == block_key:
+                screen.fill(BROWN, [(position[0] + 1) * tile_width - TILE_BORDER, position[1] * tile_width + TILE_BORDER, TILE_BORDER*2, tile_width - TILE_BORDER*2], 0)
+            if position[1] < state.grid_height - 1 and state.block_grid[position[0]][position[1]+1] == block_key:
+                screen.fill(BROWN, [position[0] * tile_width + TILE_BORDER, (position[1] + 1) * tile_width - TILE_BORDER, tile_width - TILE_BORDER*2, TILE_BORDER*2], 0)
 
     # Draw rotation obstructions
     for x in range(state.grid_width):
