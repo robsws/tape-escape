@@ -111,6 +111,11 @@ class GameState:
             for position in positions:
                 self.block_grid[position[0]][position[1]] = block_key
 
+    def has_block_fallen_off(self, block_key):
+        # Check if the given block has fallen off the game area
+        # i.e. all positions are above pits
+        return all([self.grid[position[0]][position[1]] == TileType.PIT for position in self.blocks[block_key]])
+
     def block_can_move_one(self, block_key, direction):
         # Can the given block move in the given direction without obstruction?
         # Move the positions in the block in the given direction and check if the resulting block
@@ -149,15 +154,9 @@ class GameState:
                 other_blocks_moved.add(new_pos_block_key)
             new_block.append(new_position)
         self.blocks[block_key] = new_block
+        if self.has_block_fallen_off(block_key):
+            del self.blocks[block_key]
         self.update_block_grid()
-
-    def move_block(self, block_key, direction, max_distance):
-        # Move the given block in the given direction as far as possible.
-        # Max distance is the furthest it's allowed to move, usually set to max remaining tape length.
-        distance = 0
-        while self.block_can_move_one(block_key, direction) and distance < max_distance:
-            self.move_block_one(block_key, direction)
-            distance += 1
 
     def is_inside_grid(self, position):
         return position[0] > 0 and position[0] < self.grid_width and position[1] > 0 and position[1] < self.grid_height
@@ -452,7 +451,7 @@ class GameState:
     def goal_reached(self):
         return self.player_position == self.tape_end_position == self.goal_position
 
-    def fallen_off(self):
+    def player_fallen_off(self):
         # Player has fallen off if every square between player and tape end inclusive is a PIT square
         # Algorithm only works if tape end and player are aligned vertically or horizontally (other states should not arise from movements)
         # If they aren't, player is considered 'fallen_off' by default.
@@ -622,7 +621,7 @@ while not finished:
         pygame.display.flip()
         sleep(0.2)
     # Put player back at the beginning and flash red if the player has fallen off
-    elif state.fallen_off():
+    elif state.player_fallen_off():
         state = deepcopy(starting_state)
         screen.fill(RED)
         sleep(0.1)
