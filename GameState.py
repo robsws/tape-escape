@@ -188,15 +188,15 @@ class GameState:
             while (
                 self.grid[next_player_position[0]][next_player_position[1]] != TileType.WALL and
                 (not player_next_to_block or not player_block_is_obstructed) and
+                # Block must not be the same one that is being pushed against!
+                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] and
+                self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]] and
                 tape_length != MAX_TAPE_LENGTH
             ):
                 # First move any blocks the player is resting against.
                 # Check if tape end is next to a block and whether it is obstructed or not.
                 if (
-                    player_next_to_block and not player_block_is_obstructed and
-                    # Block must not be the same one that is being pushed against!
-                    self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_end_position[0]][next_tape_end_position[1]] and
-                    self.block_grid[next_player_position[0]][next_player_position[1]] != self.block_grid[next_tape_edge_position[0]][next_tape_edge_position[1]]
+                    player_next_to_block and not player_block_is_obstructed
                 ):
                     # Move the block next to the player.
                     self.move_block_one(self.block_grid[next_player_position[0]][next_player_position[1]], reverse_player_direction)
