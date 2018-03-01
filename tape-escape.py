@@ -100,6 +100,7 @@ while not finished:
             # Mouse is strictly West of player
             obstruction_coords = state.change_direction((-1, 0))
 
+    display.obstruction_coords = obstruction_coords
     display.render_state(state)
 
     # Load next level if player has reached the goal

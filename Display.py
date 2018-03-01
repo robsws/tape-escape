@@ -21,7 +21,6 @@ class Display:
 
     def render_state(self, state):
         # Work out how big the tiles should be to fit on the given screen size
-        obstruction_coords = None
         tile_width = int(self.width/state.grid_width)
         tile_border = int(tile_width/8)
         # Reset screen to black
@@ -58,7 +57,7 @@ class Display:
         # Draw rotation obstructions
         for x in range(state.grid_width):
             for y in range(state.grid_height):
-                if obstruction_coords != None and (x, y) in obstruction_coords:
+                if self.obstruction_coords != None and (x, y) in self.obstruction_coords:
                     self.screen.fill(RED, [x * tile_width + tile_border, y * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
 
         # Draw player
