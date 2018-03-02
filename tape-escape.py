@@ -17,7 +17,7 @@ arg_parser.add_argument('-f', help='ini file containing levels', default='levels
 args = arg_parser.parse_args()
 
 levels_file = args.f
-screen_width = args.w
+screen_width = int(args.w)
 screen_height = int(screen_width * 0.67)
 screen_size = (screen_width, screen_height)
 
