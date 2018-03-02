@@ -365,24 +365,24 @@ class GameState:
         # based on current direction and which quadrants contain an obstruction
         obstructions = defaultdict(set)
         self.circle_points = set()
-        for x in range(max(0, self.player_position[0] - tape_arc_radius), min(self.player_position[0] + 1, GRID_WIDTH)):
-            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
+        for x in range(max(0, self.player_position[0] - tape_arc_radius), min(self.player_position[0] + 1, self.grid_width)):
+            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, self.grid_height)):
                 # Check for obstructions in North West quadrant
                 if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((-1,0),(0,-1))].add((x,y)) # west to north
                     obstructions[((0,-1),(-1,0))].add((x,y)) # north to west
-            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
+            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, self.grid_height)):
                 # Check for obstructions in South West quadrant
                 if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((-1,0),(0,1))].add((x,y)) # west to south
                     obstructions[((0,1),(-1,0))].add((x,y)) # south to west
-        for x in range(max(0, self.player_position[0]), min(self.player_position[0] + tape_arc_radius, GRID_WIDTH)):
-            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, GRID_HEIGHT)):
+        for x in range(max(0, self.player_position[0]), min(self.player_position[0] + tape_arc_radius, self.grid_width)):
+            for y in range(max(0, self.player_position[1] - tape_arc_radius), min(self.player_position[1] + 1, self.grid_height)):
                 # Check for obstructions in North East quadrant
                 if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((0,-1),(1,0))].add((x,y)) # north to east
                     obstructions[((1,0),(0,-1))].add((x,y)) # east to north
-            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, GRID_HEIGHT)):
+            for y in range(self.player_position[1], min(self.player_position[1] + tape_arc_radius, self.grid_height)):
                 # Check for obstructions in South East quadrant
                 if (self.grid[x][y] == TileType.WALL or self.block_grid[x][y] != '') and (x - self.player_position[0])**2 + (y - self.player_position[1])**2 < (tape_arc_radius)**2:
                     obstructions[((0,1),(1,0))].add((x,y)) # south to east

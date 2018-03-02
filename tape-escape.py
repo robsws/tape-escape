@@ -28,8 +28,8 @@ current_level = 1
 starting_state = level_loader.load_new_level_state(current_level)
 state = deepcopy(starting_state)
 
-screen = pygame.display.set_mode(SCREEN_SIZE)
-display_rect = [0,0,int(screen_width*0.6), int(screen_height*0.6)]
+screen = pygame.display.set_mode(screen_size)
+display_rect = [50,50,int(screen_width*0.6), int(screen_height*0.6)]
 display = Display(screen, display_rect)
 
 enter_debugger = False
@@ -65,10 +65,10 @@ while not finished:
     # Capture mouse hover position to determine which way to face
     mouse_position = pygame.mouse.get_pos()
     # Convert everything to window space coordinates
-    mouse_window_space_x = mouse_position[0] / screen_width
-    mouse_window_space_y = mouse_position[1] / SCREEN_HEIGHT
-    player_window_space_x = state.player_position[0] / GRID_WIDTH
-    player_window_space_y = state.player_position[1] / GRID_HEIGHT
+    mouse_window_space_x = (mouse_position[0] - display_rect[0]) / display_rect[2]
+    mouse_window_space_y = (mouse_position[1] - display_rect[1]) / display_rect[3]
+    player_window_space_x = state.player_position[0] / state.grid_width
+    player_window_space_y = state.player_position[1] / state.grid_height
     # Make coordinates relative to the player
     mouse_player_space_x = mouse_window_space_x - player_window_space_x
     mouse_player_space_y = mouse_window_space_y - player_window_space_y

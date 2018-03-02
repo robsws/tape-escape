@@ -58,7 +58,7 @@ class Display:
         for x in range(state.grid_width):
             for y in range(state.grid_height):
                 if self.obstruction_coords != None and (x, y) in self.obstruction_coords:
-                    self.screen.fill(RED, [self.x_offset + x * tile_width + tile_border, y * tile_width + tile_border, self.y_offset + tile_width - tile_border*2, tile_width - tile_border*2], 0)
+                    self.screen.fill(RED, [self.x_offset + x * tile_width + tile_border, self.y_offset + y * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
 
         # Draw player
         tape_end_centre = (self.x_offset + int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), self.y_offset + int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
@@ -73,7 +73,7 @@ class Display:
         pygame.display.flip()
 
     def flash(self, colour):
-        self.screen.fill(colour)
+        self.screen.fill(colour, [self.x_offset, self.y_offset, self.width, self.height])
         sleep(0.1)
         pygame.display.flip()
         sleep(0.2)

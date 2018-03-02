@@ -2,11 +2,6 @@ from enum import Enum
 
 # Constants and utilities needed by various modules in the game.
 
-SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 600, 400
-GRID_WIDTH = 30
-GRID_HEIGHT = 20
-SCREEN_BORDER = 4
-
 MAX_TAPE_LENGTH = 6
 
 class TileType(Enum):
