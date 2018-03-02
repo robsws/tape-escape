@@ -29,7 +29,8 @@ starting_state = level_loader.load_new_level_state(current_level)
 state = deepcopy(starting_state)
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
-display = Display(screen)
+display_rect = [0,0,int(screen_width*0.6), int(screen_height*0.6)]
+display = Display(screen, display_rect)
 
 enter_debugger = False
 
