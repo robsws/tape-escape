@@ -19,7 +19,8 @@ class Display:
 
     def __init__(self, screen, display_rect):
         self.screen = screen
-        self.x_offset, self.y_offset, self.width, self.height = display_rect
+        self.x_offset, self.y_offset, self.width, self.height = map(int, display_rect)
+        self.obstruction_coords = set()
 
     def render_state(self, state):
         # Work out how big the tiles should be to fit on the given screen size
@@ -34,10 +35,10 @@ class Display:
         top_right = (self.x_offset + (self.width - border_offset), self.y_offset + border_offset)
         bottom_left = (self.x_offset + border_offset, self.y_offset + (self.height - border_offset))
         bottom_right = (self.x_offset + (self.width - border_offset), self.y_offset + (self.height - border_offset))
-        pygame.draw.line(self.screen, DARK_GREY, top_left, top_right, border_offset*2)
-        pygame.draw.line(self.screen, DARK_GREY, top_left, bottom_left, border_offset*2)
-        pygame.draw.line(self.screen, DARK_GREY, bottom_left, bottom_right, border_offset*2)
-        pygame.draw.line(self.screen, DARK_GREY, top_right, bottom_right, border_offset*2)
+        pygame.draw.line(self.screen, LIGHT_GREY, top_left, top_right, border_offset*2)
+        pygame.draw.line(self.screen, LIGHT_GREY, top_left, bottom_left, border_offset*2)
+        pygame.draw.line(self.screen, LIGHT_GREY, bottom_left, bottom_right, border_offset*2)
+        pygame.draw.line(self.screen, LIGHT_GREY, top_right, bottom_right, border_offset*2)
 
         # Draw the grid and the static objects to the pygame screen
         for x in range(state.grid_width):

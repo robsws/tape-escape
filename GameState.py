@@ -4,18 +4,46 @@ import re
 
 from Utils import *
 
+DEFAULT_WIDTH=20
+DEFAULT_HEIGHT=10
+
 class LevelLoader:
+    # Wraps around a config file and generates level states from it.
 
     def __init__(self, levels_file):
         self.config = configparser.ConfigParser()
         self.config.read(levels_file)
 
-    def load_new_level_state(self, level):
-        return GameState(self.config['Levels'][str(level)])
+    def load_new_level_state(self, level_no):
+        return GameState(level=self.config['Levels'][str(level_no)])
 
 class GameState:
 
-    def __init__(self, level):
+    def __init__(self, level='', width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
+        self.player_position = (0,0)
+        self.player_direction = (0,-1)
+        self.player_orientation = -1 # -1 for left, 1 for right
+        self.tape_end_position = (0,0)
+        self.circle_points = set() # TODO remove        
+        self.blocks = defaultdict(list)
+
+        if level != '':
+            self.init_grid_from_serialised(level)
+        else:
+            self.init_blank_grid(width, height)
+        
+        # Also keep a lookup from grid position -> block type to make checking squares easier
+        self.update_block_grid()
+
+    def init_blank_grid(self, width, height):
+        # Build a blank grid of the given width and height
+        self.grid_width = width
+        self.grid_height = height
+        self.grid = [[TileType.SPACE for y in range(self.grid_height)] for x in range(self.grid_width)]
+        self.goal_position = (self.grid_width-1, self.grid_height-1)        
+
+    def init_grid_from_serialised(self, level):
+        # Build the internal level grid from config
         config_tile_type_map = {
             '*': TileType.SPACE,
             '0': TileType.WALL,
@@ -23,18 +51,10 @@ class GameState:
             '.': TileType.PIT,
             '+': TileType.GOAL
         }
-        self.player_position = (0,0)
-        self.player_direction = (0,-1)
-        self.player_orientation = -1 # -1 for left, 1 for right
-        self.tape_end_position = (0,0)
-        self.circle_points = set() # TODO remove        
 
-        # Build the internal level grid from config
         lines = level.splitlines()
-        self.grid_width = len(lines[0])
-        self.grid_height = len(lines)
-        self.grid = [[TileType.SPACE for y in range(self.grid_height)] for x in range(self.grid_width)]
-        self.blocks = defaultdict(list)
+        self.init_blank_grid(len(lines[0]), len(lines))
+
         for y, line in enumerate(lines):
             for x, tile in enumerate(line):
                 # blocks with the same alphabet letter move as a unit
@@ -54,8 +74,6 @@ class GameState:
                     self.grid[x][y] = TileType.SPACE
                 else:
                     self.grid[x][y] = config_tile_type_map[tile]
-        # Also keep a lookup from grid position -> block type to make checking squares easier
-        self.update_block_grid()
 
     def update_block_grid(self):
         # Reset the lookup table
