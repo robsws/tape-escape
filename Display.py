@@ -13,6 +13,8 @@ YELLOW      = 150, 150,   0
 LIGHT_GREEN =  51, 255, 153
 BROWN       = 204, 102,   0
 
+SCREEN_BORDER_THICKNESS = 0.01
+
 class Display:
 
     def __init__(self, screen, display_rect):
@@ -25,6 +27,18 @@ class Display:
         tile_border = int(tile_width/8)
         # Reset screen to black
         self.screen.fill(BLACK)
+
+        # Draw a border around the display
+        border_offset = int((SCREEN_BORDER_THICKNESS * self.width)/2)
+        top_left = (self.x_offset + border_offset, self.y_offset + border_offset)
+        top_right = (self.x_offset + (self.width - border_offset), self.y_offset + border_offset)
+        bottom_left = (self.x_offset + border_offset, self.y_offset + (self.height - border_offset))
+        bottom_right = (self.x_offset + (self.width - border_offset), self.y_offset + (self.height - border_offset))
+        pygame.draw.line(self.screen, DARK_GREY, top_left, top_right, border_offset*2)
+        pygame.draw.line(self.screen, DARK_GREY, top_left, bottom_left, border_offset*2)
+        pygame.draw.line(self.screen, DARK_GREY, bottom_left, bottom_right, border_offset*2)
+        pygame.draw.line(self.screen, DARK_GREY, top_right, bottom_right, border_offset*2)
+
         # Draw the grid and the static objects to the pygame screen
         for x in range(state.grid_width):
             for y in range(state.grid_height):
