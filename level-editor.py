@@ -30,9 +30,31 @@ screen = pygame.display.set_mode(screen_size)
 display_rect = [0, TOOLBAR_THICKNESS*screen_height, screen_width - TILEBAR_THICKNESS*screen_width, screen_height - 2*TOOLBAR_THICKNESS*screen_height]
 display = Display(screen, display_rect)
 
+class ButtonType(Enum):
+    BLANK = 0
+    TILE_PIT  = 1
+    TILE_SPACE   = 2
+    TILE_WALL = 3
+    TILE_PLAYER = 4
+    TILE_GOAL = 5
+    TILE_BLOCK_A = 6
+    TILE_BLOCK_B = 7
+    TILE_BLOCK_C = 8
+    TILE_BLOCK_D = 9
+    TILE_BLOCK_E = 10
+    TILE_BLOCK_F = 11
+    TILE_BLOCK_A_PIT = 12
+    TILE_BLOCK_B_PIT = 13
+    TILE_BLOCK_C_PIT = 14
+    TILE_BLOCK_D_PIT = 15
+    TILE_BLOCK_E_PIT = 16
+    TILE_BLOCK_F_PIT = 17
+    
+
 class Button:
 
-    def __init__(self, screen, x, y, width, height, image_filename, action_func=None):
+    def __init__(self, button_type, screen, x, y, width, height, image_filename, action_func=None):
+        self.button_type = button_type
         self.screen = screen
         self.x = x
         self.y = y
@@ -41,47 +63,75 @@ class Button:
         self.image_filename = image_filename
         self.image = pygame.image.load(image_filename)
         self.action_func = action_func
+        self.border_colour = GREY
 
     def draw(self):
         # Draw the main button border
-        border_colour = GREY
         border_offset = int((BUTTON_BORDER_THICKNESS * self.width)/2)
         top_left = (self.x + border_offset, self.y + border_offset)
         top_right = (self.x + (self.width - border_offset), self.y + border_offset)
         bottom_left = (self.x + border_offset, self.y + (self.height - border_offset))
         bottom_right = (self.x + (self.width - border_offset), self.y + (self.height - border_offset))
-        pygame.draw.line(self.screen, border_colour, top_left, top_right, border_offset*2)
-        pygame.draw.line(self.screen, border_colour, top_left, bottom_left, border_offset*2)
-        pygame.draw.line(self.screen, border_colour, bottom_left, bottom_right, border_offset*2)
-        pygame.draw.line(self.screen, border_colour, top_right, bottom_right, border_offset*2)
+        pygame.draw.line(self.screen, self.border_colour, top_left, top_right, border_offset*2)
+        pygame.draw.line(self.screen, self.border_colour, top_left, bottom_left, border_offset*2)
+        pygame.draw.line(self.screen, self.border_colour, bottom_left, bottom_right, border_offset*2)
+        pygame.draw.line(self.screen, self.border_colour, top_right, bottom_right, border_offset*2)
         # Draw the image on the button
         self.screen.blit(self.image, [self.x + border_offset*3, self.y + border_offset*3, self.width - border_offset*2, self.height - border_offset*2])
 
-enter_debugger = False
+class ToggleButtonGroup:
 
+    def __init__(self, buttons):
+        self.buttons = buttons
+        self.active = 0
+        self.update_buttons()
+    
+    def update_buttons(self):
+        for i, button in enumerate(self.buttons):
+            if i == self.active:
+                button.border_colour = LIGHTER_GREY
+            else:
+                button.border_colour = GREY
+
+    def check_for_new_active(self, mouse_pos):
+        for i, button in enumerate(self.buttons):
+            if button.x < mouse_pos[0] < button.x + button.width and button.y < mouse_pos[1] < button.y + button.height:
+                self.active = i
+                self.update_buttons()
+                break
+
+    def get_active_button(self):
+        return self.buttons[self.active]   
+
+# Set up buttons for painting tiles
 buttons = list()
-button_images = [
-    ['images/pit_icon.png', 'images/floor_icon.png', 'images/wall_icon.png'],
-    ['images/player_icon.png', 'images/goal_icon.png', 'images/blank_icon.png'],
-    ['images/block_a_icon.png', 'images/block_b_icon.png', 'images/block_c_icon.png'],
-    ['images/block_d_icon.png', 'images/block_e_icon.png', 'images/block_f_icon.png'],
-    ['images/block_a_pit_icon.png', 'images/block_b_pit_icon.png', 'images/block_c_pit_icon.png'],
-    ['images/block_d_pit_icon.png', 'images/block_e_pit_icon.png', 'images/block_f_pit_icon.png'],
+tile_buttons = list()
+tile_button_defs = [
+    [{"type":ButtonType.TILE_PIT, "image":"images/pit_icon.png"}, {"type":ButtonType.TILE_SPACE, "image":"images/floor_icon.png"}, {"type":ButtonType.TILE_WALL, "image":"images/wall_icon.png"}],
+    [{"type":ButtonType.TILE_PLAYER, "image":"images/player_icon.png"}, {"type":ButtonType.TILE_GOAL, "image":"images/goal_icon.png"}, {"type":ButtonType.BLANK, "image":"images/blank_icon.png"}],
+    [{"type":ButtonType.TILE_BLOCK_A, "image":"images/block_a_icon.png"}, {"type":ButtonType.TILE_BLOCK_B, "image":"images/block_b_icon.png"}, {"type":ButtonType.TILE_BLOCK_C, "image":"images/block_c_icon.png"}],
+    [{"type":ButtonType.TILE_BLOCK_D, "image":"images/block_d_icon.png"}, {"type":ButtonType.TILE_BLOCK_E, "image":"images/block_e_icon.png"}, {"type":ButtonType.TILE_BLOCK_F, "image":"images/block_f_icon.png"}],
+    [{"type":ButtonType.TILE_BLOCK_A_PIT, "image":"images/block_a_pit_icon.png"}, {"type":ButtonType.TILE_BLOCK_B_PIT, "image":"images/block_b_pit_icon.png"}, {"type":ButtonType.TILE_BLOCK_C_PIT, "image":"images/block_c_pit_icon.png"}],
+    [{"type":ButtonType.TILE_BLOCK_D_PIT, "image":"images/block_d_pit_icon.png"}, {"type":ButtonType.TILE_BLOCK_E_PIT, "image":"images/block_e_pit_icon.png"}, {"type":ButtonType.TILE_BLOCK_F_PIT, "image":"images/block_f_pit_icon.png"}],
 ]
 button_width = int((screen_width-display.outer_width)/3)
-for x in range(len(button_images[0])):
-    for y in range(len(button_images)):
-        buttons.append(Button(screen, display.outer_width + button_width * x, display.y_outer_offset + button_width * y, button_width, button_width, button_images[y][x]))
+for x in range(len(tile_button_defs[0])):
+    for y in range(len(tile_button_defs)):
+        button = Button(tile_button_defs[y][x]['type'], screen, display.outer_width + button_width * x, display.y_outer_offset + button_width * y, button_width, button_width, tile_button_defs[y][x]['image'])
+        tile_buttons.append(button)
+tile_button_group = ToggleButtonGroup(tile_buttons)
+buttons = tile_buttons
 
 # Main game loop
 finished = False
 while not finished:
+
+    mouse_position = pygame.mouse.get_pos()
     # Capture input and update game state
     for event in pygame.event.get():
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if enter_debugger:
-                pdb.set_trace()
+            tile_button_group.check_for_new_active(mouse_position)
         # Keyboard commands
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_d:
@@ -89,9 +139,6 @@ while not finished:
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
-    
-    # Capture mouse hover position
-    mouse_position = pygame.mouse.get_pos()
 
     display.render_state(state)
     for button in buttons:
