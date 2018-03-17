@@ -29,7 +29,7 @@ starting_state = level_loader.load_new_level_state(current_level)
 state = deepcopy(starting_state)
 
 screen = pygame.display.set_mode(screen_size)
-display_rect = [50,50,int(screen_width*0.6), int(screen_height*0.6)]
+display_rect = [0,0,int(screen_width*0.8), int(screen_height*0.8)]
 display = Display(screen, display_rect)
 
 enter_debugger = False
@@ -118,5 +118,7 @@ while not finished:
     elif state.player_fallen_off():
         state = deepcopy(starting_state)
         display.flash_red()
+
+    pygame.display.flip()
 
 pygame.quit()

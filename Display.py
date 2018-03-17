@@ -6,7 +6,9 @@ from GameState import GameState
 
 BLACK       =   0,   0,   0
 DARK_GREY   =  30,  30,  30
+GREY        =  60,  60,  60
 LIGHT_GREY  = 100, 100, 100
+LIGHTER_GREY= 150, 150, 150
 SILVER      = 200, 200, 200
 RED         = 150,   0,   0
 YELLOW      = 150, 150,   0
@@ -20,11 +22,11 @@ class Display:
 
     def __init__(self, screen, display_rect):
         self.screen = screen
-        self.x_border_offset, self.y_border_offset, self.border_width, self.border_height = map(int, display_rect)
-        self.width = int(self.border_width - self.border_width * SCREEN_BORDER_SPACE_THICKNESS)
-        self.height = int(self.border_height - self.border_height * SCREEN_BORDER_SPACE_THICKNESS)
-        self.x_offset = int(self.x_border_offset + self.border_width * SCREEN_BORDER_SPACE_THICKNESS)
-        self.y_offset = int(self.y_border_offset + self.border_height * SCREEN_BORDER_SPACE_THICKNESS)
+        self.x_outer_offset, self.y_outer_offset, self.outer_width, self.outer_height = map(int, display_rect)
+        self.width = int(self.outer_width - self.outer_width * SCREEN_BORDER_SPACE_THICKNESS)
+        self.height = int(self.outer_height - self.outer_height * SCREEN_BORDER_SPACE_THICKNESS)
+        self.x_offset = int(self.x_outer_offset + self.outer_width * SCREEN_BORDER_SPACE_THICKNESS)
+        self.y_offset = int(self.y_outer_offset + self.outer_height * SCREEN_BORDER_SPACE_THICKNESS)
         self.obstruction_coords = set()
 
     def render_state(self, state):
@@ -36,10 +38,10 @@ class Display:
 
         # Draw a border around the display
         border_offset = int((SCREEN_BORDER_THICKNESS * self.width)/2)
-        top_left = (self.x_border_offset + border_offset, self.y_border_offset + border_offset)
-        top_right = (self.x_border_offset + (self.border_width - border_offset), self.y_border_offset + border_offset)
-        bottom_left = (self.x_border_offset + border_offset, self.y_border_offset + (self.border_height - border_offset))
-        bottom_right = (self.x_border_offset + (self.border_width - border_offset), self.y_border_offset + (self.border_height - border_offset))
+        top_left = (self.x_outer_offset + border_offset, self.y_outer_offset + border_offset)
+        top_right = (self.x_outer_offset + (self.outer_width - border_offset), self.y_outer_offset + border_offset)
+        bottom_left = (self.x_outer_offset + border_offset, self.y_outer_offset + (self.outer_height - border_offset))
+        bottom_right = (self.x_outer_offset + (self.outer_width - border_offset), self.y_outer_offset + (self.outer_height - border_offset))
         pygame.draw.line(self.screen, LIGHT_GREY, top_left, top_right, border_offset*2)
         pygame.draw.line(self.screen, LIGHT_GREY, top_left, bottom_left, border_offset*2)
         pygame.draw.line(self.screen, LIGHT_GREY, bottom_left, bottom_right, border_offset*2)
@@ -89,9 +91,6 @@ class Display:
         pygame.draw.line(self.screen, SILVER, tape_end_centre, tape_edge, 2)
         pygame.draw.circle(self.screen, RED, player_screen_position, int(tile_width/2), 0)
         
-        # Swap the buffers
-        pygame.display.flip()
-
     def flash(self, colour):
         self.screen.fill(colour, [self.x_offset, self.y_offset, self.width, self.height])
         sleep(0.1)
