@@ -28,6 +28,7 @@ class Display:
         self.x_offset = int(self.x_outer_offset + self.outer_width * SCREEN_BORDER_SPACE_THICKNESS)
         self.y_offset = int(self.y_outer_offset + self.outer_height * SCREEN_BORDER_SPACE_THICKNESS)
         self.obstruction_coords = set()
+        self.debug_grid = False
 
     def render_state(self, state):
         # Work out how big the tiles should be to fit on the given screen size
@@ -47,6 +48,12 @@ class Display:
         pygame.draw.line(self.screen, LIGHT_GREY, bottom_left, bottom_right, border_offset*2)
         pygame.draw.line(self.screen, LIGHT_GREY, top_right, bottom_right, border_offset*2)
 
+        # Draw the debug grid
+        if self.debug_grid:
+            for x in range(state.grid_width + 1):
+                pygame.draw.line(self.screen, RED, (self.x_offset + x*tile_width, self.y_offset), (self.x_offset + x*tile_width, self.y_offset + self.height))
+            for y in range(state.grid_height + 1):
+                pygame.draw.line(self.screen, RED, (self.x_offset, self.y_offset + y*tile_width), (self.x_offset + self.width, self.y_offset + y*tile_width))
         # Draw the grid and the static objects to the pygame screen
         for x in range(state.grid_width):
             for y in range(state.grid_height):

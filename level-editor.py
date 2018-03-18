@@ -29,6 +29,7 @@ state = GameState()
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0, TOOLBAR_THICKNESS*screen_height, screen_width - TILEBAR_THICKNESS*screen_width, screen_height - 2*TOOLBAR_THICKNESS*screen_height]
 display = Display(screen, display_rect)
+display.debug_grid = True
 
 class ButtonType(Enum):
     BLANK = 0
