@@ -31,9 +31,6 @@ class GameState:
             self.init_grid_from_serialised(level)
         else:
             self.init_blank_grid(width, height)
-        
-        # Also keep a lookup from grid position -> block type to make checking squares easier
-        self.update_block_grid()
 
     def init_blank_grid(self, width, height):
         # Build a blank grid of the given width and height
@@ -44,36 +41,34 @@ class GameState:
 
     def init_grid_from_serialised(self, level):
         # Build the internal level grid from config
-        config_tile_type_map = {
-            '*': TileType.SPACE,
-            '0': TileType.WALL,
-            '@': TileType.PLAYER,
-            '.': TileType.PIT,
-            '+': TileType.GOAL
-        }
 
         lines = level.splitlines()
         self.init_blank_grid(len(lines[0]), len(lines))
 
         for y, line in enumerate(lines):
             for x, tile in enumerate(line):
-                # blocks with the same alphabet letter move as a unit
-                # upper case signifies a space beneath, lower case signifies a pit beneath
-                if re.match(r'[A-Z]', tile):
-                    self.blocks[tile.lower()].append((x,y))
-                    self.grid[x][y] = TileType.SPACE
-                elif re.match(r'[a-z]', tile):
-                    self.blocks[tile].append((x,y))
-                    self.grid[x][y] = TileType.PIT
-                elif config_tile_type_map[tile] == TileType.PLAYER:
-                    self.player_position = (x,y)
-                    self.tape_end_position = (x,y)
-                    self.grid[x][y] = TileType.SPACE
-                elif config_tile_type_map[tile] == TileType.GOAL:
-                    self.goal_position = (x,y)
-                    self.grid[x][y] = TileType.SPACE
-                else:
-                    self.grid[x][y] = config_tile_type_map[tile]
+                self.update_grid_square(x, y, tile)
+
+    def update_grid_square(self, x, y, tile):
+        # blocks with the same alphabet letter move as a unit
+        # upper case signifies a space beneath, lower case signifies a pit beneath
+        if re.match(r'[A-Z]', tile):
+            self.blocks[tile.lower()].append((x,y))
+            self.grid[x][y] = TileType.SPACE
+            self.update_block_grid()
+        elif re.match(r'[a-z]', tile):
+            self.blocks[tile].append((x,y))
+            self.grid[x][y] = TileType.PIT
+            self.update_block_grid()
+        elif sym_to_tiletype_map[tile] == TileType.PLAYER:
+            self.player_position = (x,y)
+            self.tape_end_position = (x,y)
+            self.grid[x][y] = TileType.SPACE
+        elif sym_to_tiletype_map[tile] == TileType.GOAL:
+            self.goal_position = (x,y)
+            self.grid[x][y] = TileType.SPACE
+        else:
+            self.grid[x][y] = sym_to_tiletype_map[tile]
 
     def update_block_grid(self):
         # Reset the lookup table

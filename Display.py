@@ -97,7 +97,15 @@ class Display:
         pygame.draw.line(self.screen, YELLOW, tape_end_centre, player_screen_position, 2)
         pygame.draw.line(self.screen, SILVER, tape_end_centre, tape_edge, 2)
         pygame.draw.circle(self.screen, RED, player_screen_position, int(tile_width/2), 0)
-        
+
+    def screen_position_to_grid_square(self, state, position):
+        tile_width = int(self.width/state.grid_width)
+        print(position, self.x_offset, self.x_offset + self.width, self.y_offset, self.y_offset + self.height)
+        if self.x_offset < position[0] < self.x_offset + self.width and self.y_offset < position[1] < self.y_offset + self.height:
+            return (int((position[0] - self.x_offset)/tile_width), int((position[1] - self.y_offset)/tile_width))
+        else:
+            return None
+
     def flash(self, colour):
         self.screen.fill(colour, [self.x_offset, self.y_offset, self.width, self.height])
         sleep(0.1)

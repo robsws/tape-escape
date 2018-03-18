@@ -1,3 +1,4 @@
+import pdb
 from enum import Enum
 
 # Constants and utilities needed by various modules in the game.
@@ -10,6 +11,17 @@ class TileType(Enum):
     PLAYER = 3
     PIT = 4
     GOAL = 5
+
+sym_to_tiletype_map = {
+    '*': TileType.SPACE,
+    '0': TileType.WALL,
+    '@': TileType.PLAYER,
+    '.': TileType.PIT,
+    '+': TileType.GOAL
+}
+tiletype_to_sym_map = {}
+for k, v in sym_to_tiletype_map.items():
+    tiletype_to_sym_map[v] = k
 
 def vector_add(vec1, vec2):
     # Add two 2d tuples elementwise

@@ -51,6 +51,26 @@ class ButtonType(Enum):
     TILE_BLOCK_E_PIT = 16
     TILE_BLOCK_F_PIT = 17
     
+button_type_to_tile_type_map = {
+    ButtonType.BLANK: tiletype_to_sym_map[TileType.PIT],
+    ButtonType.TILE_PIT: tiletype_to_sym_map[TileType.PIT],
+    ButtonType.TILE_SPACE: tiletype_to_sym_map[TileType.SPACE],
+    ButtonType.TILE_WALL: tiletype_to_sym_map[TileType.WALL],
+    ButtonType.TILE_PLAYER: tiletype_to_sym_map[TileType.PLAYER],
+    ButtonType.TILE_GOAL: tiletype_to_sym_map[TileType.GOAL],
+    ButtonType.TILE_BLOCK_A: 'A',
+    ButtonType.TILE_BLOCK_B: 'B',
+    ButtonType.TILE_BLOCK_C: 'C',
+    ButtonType.TILE_BLOCK_D: 'D',
+    ButtonType.TILE_BLOCK_E: 'E',
+    ButtonType.TILE_BLOCK_F: 'F',
+    ButtonType.TILE_BLOCK_A_PIT: 'a',
+    ButtonType.TILE_BLOCK_B_PIT: 'b',
+    ButtonType.TILE_BLOCK_C_PIT: 'c',
+    ButtonType.TILE_BLOCK_D_PIT: 'd',
+    ButtonType.TILE_BLOCK_E_PIT: 'e',
+    ButtonType.TILE_BLOCK_F_PIT: 'f'
+}
 
 class Button:
 
@@ -133,10 +153,13 @@ while not finished:
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
             tile_button_group.check_for_new_active(mouse_position)
+            grid_square = display.screen_position_to_grid_square(state, mouse_position)
+            print(grid_square)
+            if grid_square != None:
+                state.update_grid_square(grid_square[0], grid_square[1], button_type_to_tile_type_map[tile_button_group.get_active_button().button_type])
         # Keyboard commands
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_d:
-                enter_debugger = True
+            print()
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
