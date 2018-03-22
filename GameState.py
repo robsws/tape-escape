@@ -61,13 +61,25 @@ class GameState:
             self.grid[x][y] = TileType.PIT
             self.update_block_grid()
         elif sym_to_tiletype_map[tile] == TileType.PLAYER:
+            if self.block_grid[x][y] != '':
+                # remove block (do this for other types too)
+                self.blocks[self.block_grid[x][y]].remove((x,y))
+                self.update_block_grid()
             self.player_position = (x,y)
             self.tape_end_position = (x,y)
             self.grid[x][y] = TileType.SPACE
         elif sym_to_tiletype_map[tile] == TileType.GOAL:
+            if self.block_grid[x][y] != '':
+                # remove block (do this for other types too)
+                self.blocks[self.block_grid[x][y]].remove((x,y))
+                self.update_block_grid()
             self.goal_position = (x,y)
             self.grid[x][y] = TileType.SPACE
         else:
+            if self.block_grid[x][y] != '':
+                # remove block (do this for other types too)
+                self.blocks[self.block_grid[x][y]].remove((x,y))
+                self.update_block_grid()
             self.grid[x][y] = sym_to_tiletype_map[tile]
 
     def update_block_grid(self):
