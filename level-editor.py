@@ -50,6 +50,7 @@ class ButtonType(Enum):
     TILE_BLOCK_D_PIT = 15
     TILE_BLOCK_E_PIT = 16
     TILE_BLOCK_F_PIT = 17
+    SAVE = 18
     
 button_type_to_tile_type_map = {
     ButtonType.BLANK: tiletype_to_sym_map[TileType.PIT],
@@ -86,6 +87,9 @@ class Button:
         self.action_func = action_func
         self.border_colour = GREY
 
+    def position_inside_button(self, x, y):
+        return self.x < x < self.x + self.width and self.y < y < self.y + self.height
+        
     def draw(self):
         # Draw the main button border
         border_offset = int((BUTTON_BORDER_THICKNESS * self.width)/2)
@@ -116,7 +120,7 @@ class ToggleButtonGroup:
 
     def check_for_new_active(self, mouse_pos):
         for i, button in enumerate(self.buttons):
-            if button.x < mouse_pos[0] < button.x + button.width and button.y < mouse_pos[1] < button.y + button.height:
+            if button.position_inside_button(mouse_pos[0], mouse_pos[1]):
                 self.active = i
                 self.update_buttons()
                 break
@@ -124,8 +128,16 @@ class ToggleButtonGroup:
     def get_active_button(self):
         return self.buttons[self.active]   
 
-# Set up buttons for painting tiles
-buttons = list()
+# Set up regular action buttons
+action_buttons = list()
+
+# Save button
+def save():
+    global state
+    print(state.serialize())
+action_buttons.append(Button(ButtonType.SAVE, screen, 0, 0, int(screen_width / 10), display.y_outer_offset, "images/save_icon.png", save))
+
+# Buttons for painting tiles
 tile_buttons = list()
 tile_button_defs = [
     [{"type":ButtonType.TILE_PIT, "image":"images/pit_icon.png"}, {"type":ButtonType.TILE_SPACE, "image":"images/floor_icon.png"}, {"type":ButtonType.TILE_WALL, "image":"images/wall_icon.png"}],
@@ -141,7 +153,6 @@ for x in range(len(tile_button_defs[0])):
         button = Button(tile_button_defs[y][x]['type'], screen, display.outer_width + button_width * x, display.y_outer_offset + button_width * y, button_width, button_width, tile_button_defs[y][x]['image'])
         tile_buttons.append(button)
 tile_button_group = ToggleButtonGroup(tile_buttons)
-buttons = tile_buttons
 
 # Main game loop
 finished = False
@@ -152,6 +163,9 @@ while not finished:
     for event in pygame.event.get():
         # Capture button input from mouse
         if event.type == pygame.MOUSEBUTTONDOWN:
+            for button in action_buttons:
+                if button.position_inside_button(mouse_position[0], mouse_position[1]):
+                    button.action_func()
             tile_button_group.check_for_new_active(mouse_position)
             grid_square = display.screen_position_to_grid_square(state, mouse_position)
             print(grid_square)
@@ -165,7 +179,7 @@ while not finished:
             finished = True
 
     display.render_state(state)
-    for button in buttons:
+    for button in action_buttons + tile_buttons:
         button.draw()
     pygame.display.flip()
 

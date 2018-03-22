@@ -31,6 +31,8 @@ class GameState:
             self.init_grid_from_serialised(level)
         else:
             self.init_blank_grid(width, height)
+        
+        self.update_block_grid()
 
     def init_blank_grid(self, width, height):
         # Build a blank grid of the given width and height
@@ -40,14 +42,29 @@ class GameState:
         self.goal_position = (self.grid_width-1, self.grid_height-1)        
 
     def init_grid_from_serialised(self, level):
-        # Build the internal level grid from config
-
+        # Build the internal level grid from string representation
         lines = level.splitlines()
         self.init_blank_grid(len(lines[0]), len(lines))
 
         for y, line in enumerate(lines):
             for x, tile in enumerate(line):
                 self.update_grid_square(x, y, tile)
+
+    def serialize(self):
+        # Serialize the state down to a string representation (reverse of init_grid_from_serialized)
+        level_string = ''
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+                if self.block_grid[x][y] != '':
+                    level_string += self.block_grid[x][y]
+                elif self.player_position == (x,y):
+                    level_string += tiletype_to_sym_map[TileType.PLAYER]
+                elif self.goal_position == (x,y):
+                    level_string += tiletype_to_sym_map[TileType.GOAL]
+                else:
+                    level_string += tiletype_to_sym_map[self.grid[x][y]]
+            level_string += '\n'
+        return level_string
 
     def update_grid_square(self, x, y, tile):
         # blocks with the same alphabet letter move as a unit
