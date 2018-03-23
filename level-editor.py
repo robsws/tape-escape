@@ -24,6 +24,8 @@ screen_height = int(screen_width * 0.67)
 screen_size = (screen_width, screen_height)
 
 pygame.init()
+pygame.font.init()
+font = pygame.font.SysFont('Arial',30)
 
 current_level = 0
 states = [GameState()]
@@ -54,6 +56,8 @@ class ButtonType(Enum):
     TILE_BLOCK_F_PIT = 17
     SAVE = 18
     LOAD = 19
+    PREV_LEVEL = 20
+    NEXT_LEVEL = 21
     
 button_type_to_tile_type_map = {
     ButtonType.BLANK: tiletype_to_sym_map[TileType.PIT],
@@ -166,6 +170,20 @@ def load():
 
 action_buttons.append(Button(ButtonType.LOAD, screen, int(screen_width / 10), 0, int(screen_width / 10), display.y_outer_offset, "images/load_icon.png", load))
 
+def prev_level():
+    global current_level
+    if current_level > 0:
+        current_level -= 1
+
+action_buttons.append(Button(ButtonType.PREV_LEVEL, screen, 0, screen_height - display.y_outer_offset, int(screen_width / 10), display.y_outer_offset, "images/arrow_left.png", prev_level))
+
+def next_level():
+    global current_level
+    if current_level < len(states) - 1:
+        current_level += 1
+
+action_buttons.append(Button(ButtonType.NEXT_LEVEL, screen, int(screen_width / 10), screen_height - display.y_outer_offset, int(screen_width / 10), display.y_outer_offset, "images/arrow_right.png", next_level))
+
 # Buttons for painting tiles
 tile_buttons = list()
 tile_button_defs = [
@@ -209,6 +227,8 @@ while not finished:
     display.render_state(states[current_level])
     for button in action_buttons + tile_buttons:
         button.draw()
+    level_number_display = font.render(str(current_level+1), False, RED)
+    screen.blit(level_number_display, (int(screen_width / 10)*3, screen_height - display.y_outer_offset))
     pygame.display.flip()
 
 pygame.quit()
