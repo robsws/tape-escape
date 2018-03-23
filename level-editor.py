@@ -9,7 +9,7 @@ from Display import *
 
 TOOLBAR_THICKNESS = 0.1
 TILEBAR_THICKNESS = 0.2
-BUTTON_BORDER_THICKNESS = 0.2
+BUTTON_BORDER_THICKNESS = 0.1
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
 import win_unicode_console
@@ -109,7 +109,8 @@ class Button:
         pygame.draw.line(self.screen, self.border_colour, bottom_left, bottom_right, border_offset*2)
         pygame.draw.line(self.screen, self.border_colour, top_right, bottom_right, border_offset*2)
         # Draw the image on the button
-        self.screen.blit(self.image, [self.x + border_offset*3, self.y + border_offset*3, self.width - border_offset*2, self.height - border_offset*2])
+        scaled = pygame.transform.scale(self.image, (self.width - border_offset*6, self.height - border_offset*6))
+        self.screen.blit(scaled, [self.x + border_offset*3, self.y + border_offset*3, self.width - border_offset*2, self.height - border_offset*2])
 
 class ToggleButtonGroup:
 
