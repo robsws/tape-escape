@@ -32,7 +32,6 @@ class GameState:
         else:
             self.init_blank_grid(width, height)
         
-        self.update_block_grid()
 
     def init_blank_grid(self, width, height):
         # Build a blank grid of the given width and height
@@ -40,6 +39,7 @@ class GameState:
         self.grid_height = height
         self.grid = [[TileType.PIT for y in range(self.grid_height)] for x in range(self.grid_width)]
         self.goal_position = (self.grid_width-1, self.grid_height-1)        
+        self.update_block_grid()
 
     def init_grid_from_serialised(self, level):
         # Build the internal level grid from string representation

@@ -1,8 +1,10 @@
 import pygame
 import argparse
+import easygui
+import configparser
 
 from Utils import *
-from GameState import GameState
+from GameState import GameState, LevelLoader
 from Display import *
 
 TOOLBAR_THICKNESS = 0.1
@@ -23,8 +25,8 @@ screen_size = (screen_width, screen_height)
 
 pygame.init()
 
-current_level = 1
-state = GameState()
+current_level = 0
+states = [GameState()]
 
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0, TOOLBAR_THICKNESS*screen_height, screen_width - TILEBAR_THICKNESS*screen_width, screen_height - 2*TOOLBAR_THICKNESS*screen_height]
@@ -51,6 +53,7 @@ class ButtonType(Enum):
     TILE_BLOCK_E_PIT = 16
     TILE_BLOCK_F_PIT = 17
     SAVE = 18
+    LOAD = 19
     
 button_type_to_tile_type_map = {
     ButtonType.BLANK: tiletype_to_sym_map[TileType.PIT],
@@ -133,9 +136,35 @@ action_buttons = list()
 
 # Save button
 def save():
-    global state
-    print(state.serialize())
+    global states
+    config = configparser.ConfigParser()
+    config.add_section('Levels')
+    for i, state in enumerate(states):
+        config.set('Levels', str(i+1), state.serialize())
+
+    filename = easygui.filesavebox()
+    try:
+        with open(filename, 'w') as file:
+            config.write(file)
+            file.close()
+    except (IOError, TypeError) as err:
+        print("File write failed: "+str(err))
+    
+    
 action_buttons.append(Button(ButtonType.SAVE, screen, 0, 0, int(screen_width / 10), display.y_outer_offset, "images/save_icon.png", save))
+
+def load():
+    global states
+    states = []
+    filename = easygui.fileopenbox()
+    try:
+        levelloader = LevelLoader(filename)
+    except (IOError, TypeError) as err:
+        print("File load failed: "+str(err))
+    for i in range(len(levelloader.config['Levels'])):
+        states.append(levelloader.load_new_level_state(i+1))
+
+action_buttons.append(Button(ButtonType.LOAD, screen, int(screen_width / 10), 0, int(screen_width / 10), display.y_outer_offset, "images/load_icon.png", load))
 
 # Buttons for painting tiles
 tile_buttons = list()
@@ -167,18 +196,17 @@ while not finished:
                 if button.position_inside_button(mouse_position[0], mouse_position[1]):
                     button.action_func()
             tile_button_group.check_for_new_active(mouse_position)
-            grid_square = display.screen_position_to_grid_square(state, mouse_position)
-            print(grid_square)
+            grid_square = display.screen_position_to_grid_square(states[current_level], mouse_position)
             if grid_square != None:
-                state.update_grid_square(grid_square[0], grid_square[1], button_type_to_tile_type_map[tile_button_group.get_active_button().button_type])
+                states[current_level].update_grid_square(grid_square[0], grid_square[1], button_type_to_tile_type_map[tile_button_group.get_active_button().button_type])
         # Keyboard commands
         elif event.type == pygame.KEYDOWN:
-            print()
+            pass
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
 
-    display.render_state(state)
+    display.render_state(states[current_level])
     for button in action_buttons + tile_buttons:
         button.draw()
     pygame.display.flip()
