@@ -16,17 +16,16 @@ LIGHT_GREEN =  51, 255, 153
 BROWN       = 204, 102,   0
 
 SCREEN_BORDER_THICKNESS = 0.01
-SCREEN_BORDER_SPACE_THICKNESS = 0.02
 
 class Display:
 
     def __init__(self, screen, display_rect):
         self.screen = screen
         self.x_outer_offset, self.y_outer_offset, self.outer_width, self.outer_height = map(int, display_rect)
-        self.width = int(self.outer_width - self.outer_width * SCREEN_BORDER_SPACE_THICKNESS)
-        self.height = int(self.outer_height - self.outer_height * SCREEN_BORDER_SPACE_THICKNESS)
-        self.x_offset = int(self.x_outer_offset + self.outer_width * SCREEN_BORDER_SPACE_THICKNESS)
-        self.y_offset = int(self.y_outer_offset + self.outer_height * SCREEN_BORDER_SPACE_THICKNESS)
+        self.width = int(self.outer_width - self.outer_width * SCREEN_BORDER_THICKNESS * 2)
+        self.height = int(self.outer_height - self.outer_height * SCREEN_BORDER_THICKNESS * 2)
+        self.x_offset = int(self.x_outer_offset + self.outer_width * SCREEN_BORDER_THICKNESS)
+        self.y_offset = int(self.y_outer_offset + self.outer_height * SCREEN_BORDER_THICKNESS)
         self.obstruction_coords = set()
         self.debug_grid = False
 
