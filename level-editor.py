@@ -148,7 +148,7 @@ def save():
     for i, state in enumerate(states):
         config.set('Levels', str(i+1), state.serialize())
 
-    filename = easygui.filesavebox()
+    filename = easygui.filesavebox(default='levels.ini', filetypes=['*.ini'])
     try:
         with open(filename, 'w') as file:
             config.write(file)

@@ -4,8 +4,8 @@ import re
 
 from Utils import *
 
-DEFAULT_WIDTH=20
-DEFAULT_HEIGHT=13
+DEFAULT_WIDTH=30
+DEFAULT_HEIGHT=20
 
 class LevelLoader:
     # Wraps around a config file and generates level states from it.
