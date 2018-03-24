@@ -58,6 +58,7 @@ class ButtonType(Enum):
     LOAD = 19
     PREV_LEVEL = 20
     NEXT_LEVEL = 21
+    ADD_LEVEL = 22
     
 button_type_to_tile_type_map = {
     ButtonType.BLANK: tiletype_to_sym_map[TileType.PIT],
@@ -185,6 +186,13 @@ def next_level():
 
 action_buttons.append(Button(ButtonType.NEXT_LEVEL, screen, int(screen_width / 10), screen_height - display.y_outer_offset, int(screen_width / 10), display.y_outer_offset, "images/arrow_right.png", next_level))
 
+def add_level():
+    global states, current_level
+    states.append(GameState())
+    current_level = len(states)-1
+
+action_buttons.append(Button(ButtonType.ADD_LEVEL, screen, int(screen_width / 10)*2, screen_height - display.y_outer_offset, int(screen_width / 10), display.y_outer_offset, "images/plus_icon.png", add_level))
+
 # Buttons for painting tiles
 tile_buttons = list()
 tile_button_defs = [
@@ -229,7 +237,7 @@ while not finished:
     for button in action_buttons + tile_buttons:
         button.draw()
     level_number_display = font.render(str(current_level+1), False, RED)
-    screen.blit(level_number_display, (int(screen_width / 10)*3, screen_height - display.y_outer_offset))
+    screen.blit(level_number_display, (int(screen_width / 10)*5, screen_height - display.y_outer_offset))
     pygame.display.flip()
 
 pygame.quit()
