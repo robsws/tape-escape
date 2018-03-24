@@ -99,8 +99,9 @@ class Display:
 
     def screen_position_to_grid_square(self, state, position):
         tile_width = int(self.width/state.grid_width)
-        if self.x_offset < position[0] < self.x_offset + self.width and self.y_offset < position[1] < self.y_offset + self.height:
-            return (int((position[0] - self.x_offset)/tile_width), int((position[1] - self.y_offset)/tile_width))
+        square = (int((position[0] - self.x_offset)/tile_width), int((position[1] - self.y_offset)/tile_width))
+        if 0 <= square[0] < state.grid_width and 0 <= square[1] < state.grid_height:
+            return square
         else:
             return None
 

@@ -223,9 +223,9 @@ while not finished:
                 if button.position_inside_button(mouse_position[0], mouse_position[1]):
                     button.action_func()
             tile_button_group.check_for_new_active(mouse_position)
-            grid_square = display.screen_position_to_grid_square(states[current_level], mouse_position)
-            if grid_square != None:
-                states[current_level].update_grid_square(grid_square[0], grid_square[1], button_type_to_tile_type_map[tile_button_group.get_active_button().button_type])
+        grid_square = display.screen_position_to_grid_square(states[current_level], mouse_position)
+        if grid_square != None and pygame.mouse.get_pressed()[0]:
+            states[current_level].update_grid_square(grid_square[0], grid_square[1], button_type_to_tile_type_map[tile_button_group.get_active_button().button_type])
         # Keyboard commands
         elif event.type == pygame.KEYDOWN:
             pass
