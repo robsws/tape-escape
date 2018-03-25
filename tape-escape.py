@@ -5,6 +5,7 @@ import argparse
 
 from Utils import *
 from GameState import LevelLoader, GameState
+from StateHistory import StateHistory
 from Display import Display
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
@@ -27,7 +28,10 @@ level_loader = LevelLoader(levels_file)
 current_level = 1
 starting_state = level_loader.load_new_level_state(current_level)
 state = deepcopy(starting_state)
-history = [state]
+
+MAX_HISTORY = 50
+history = StateHistory(MAX_HISTORY)
+history.add(state)
 
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0,0,screen_width, screen_height]
@@ -38,6 +42,7 @@ enter_debugger = False
 # Main game loop
 finished = False
 while not finished:
+    print(history.to_string()+'    '+str(history.active))
     # Capture input and update game state
     obstruction_coords = None
     for event in pygame.event.get():
@@ -47,23 +52,35 @@ while not finished:
                 pdb.set_trace()
             if event.button == 1: # left click
                 state.extend_tape()
+                history.add(state)
             elif event.button == 2: # middle click
                 obstruction_coords = state.switch_orientation()
+                history.add(state)
             elif event.button == 3: # right click
                 state.retract_tape()
+                history.add(state)
         # Keyboard cheats
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_n:
                 # N key skips level
                 state.force_win = True
+                history.add(state)
             elif event.key == pygame.K_p and current_level > 0:
                 # P key goes back a level
                 current_level -= 1
                 starting_state = level_loader.load_new_level_state(current_level)
                 state = deepcopy(starting_state)
+                history.add(state)
             elif event.key == pygame.K_r:
                 # R key restarts level
                 state = deepcopy(starting_state)
+                history.add(state)
+            elif event.key == pygame.K_z:
+                # Z key undoes a move
+                state = history.back()
+            elif event.key == pygame.K_y:
+                # Y key redoes a move
+                state = history.forward()
             elif event.key == pygame.K_d:
                 enter_debugger = True
         # Quit game if QUIT signal is detected
