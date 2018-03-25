@@ -42,7 +42,6 @@ enter_debugger = False
 # Main game loop
 finished = False
 while not finished:
-    print(history.to_string()+'    '+str(history.active))
     # Capture input and update game state
     obstruction_coords = None
     for event in pygame.event.get():

@@ -400,9 +400,15 @@ class GameState:
         future_tape_edge_position = get_tape_edge_position(future_tape_end_position, direction, self.player_orientation)
         
         if self.is_tape_edge_inside_wall_or_block(future_tape_edge_position, direction):
-            # Prevent player rotating and pass back the two positions either side of the tape edge as the obstructions.
-            future_tape_edge_position_offset = vector_add(future_tape_edge_position, direction)     
-            return set([future_tape_edge_position, future_tape_edge_position_offset])
+            # Check if we can change orientation of the player and rotate
+            alt_tape_edge_position = get_tape_edge_position(future_tape_end_position, direction, self.player_orientation*-1)
+            if self.is_tape_edge_inside_wall_or_block(alt_tape_edge_position, direction):
+                # Prevent player rotating and pass back the two positions either side of the tape edge as the obstructions.
+                future_tape_edge_position_offset = vector_add(future_tape_edge_position, direction)     
+                return set([future_tape_edge_position, future_tape_edge_position_offset])
+            else:
+                # Change player's orientation so they can rotate
+                self.player_orientation *= -1
 
         # Scan across the bounding square whose sides are length t*2 where t = tape radius
         # and for each point, if it is a wall and is within the circle traced by the tape
