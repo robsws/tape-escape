@@ -27,9 +27,10 @@ level_loader = LevelLoader(levels_file)
 current_level = 1
 starting_state = level_loader.load_new_level_state(current_level)
 state = deepcopy(starting_state)
+history = [state]
 
 screen = pygame.display.set_mode(screen_size)
-display_rect = [0,0,int(screen_width*0.8), int(screen_height*0.8)]
+display_rect = [0,0,screen_width, screen_height]
 display = Display(screen, display_rect)
 
 enter_debugger = False
@@ -52,9 +53,16 @@ while not finished:
                 state.retract_tape()
         # Keyboard cheats
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_2:
-                current_level = 2
-                starting_state = level_loader.load_new_level_state(2)
+            if event.key == pygame.K_n:
+                # N key skips level
+                state.force_win = True
+            elif event.key == pygame.K_p and current_level > 0:
+                # P key goes back a level
+                current_level -= 1
+                starting_state = level_loader.load_new_level_state(current_level)
+                state = deepcopy(starting_state)
+            elif event.key == pygame.K_r:
+                # R key restarts level
                 state = deepcopy(starting_state)
             elif event.key == pygame.K_d:
                 enter_debugger = True

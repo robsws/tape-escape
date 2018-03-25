@@ -148,7 +148,8 @@ def save():
     for i, state in enumerate(states):
         config.set('Levels', str(i+1), state.serialize())
 
-    filename = easygui.filesavebox(default='levels.ini', filetypes=['*.ini'])
+    # filename = easygui.filesavebox(default='levels.ini', filetypes=['*.ini'])
+    filename = 'levels.ini'
     try:
         with open(filename, 'w') as file:
             config.write(file)
@@ -162,7 +163,8 @@ action_buttons.append(Button(ButtonType.SAVE, screen, 0, 0, int(screen_width / 1
 def load():
     global states
     states = []
-    filename = easygui.fileopenbox()
+    # filename = easygui.fileopenbox()
+    filename = 'levels.ini'
     try:
         levelloader = LevelLoader(filename)
     except (IOError, TypeError) as err:
@@ -170,6 +172,7 @@ def load():
     for i in range(len(levelloader.config['Levels'])):
         states.append(levelloader.load_new_level_state(i+1))
 
+load()
 action_buttons.append(Button(ButtonType.LOAD, screen, int(screen_width / 10), 0, int(screen_width / 10), display.y_outer_offset, "images/load_icon.png", load))
 
 def prev_level():

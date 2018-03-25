@@ -26,6 +26,7 @@ class GameState:
         self.tape_end_position = (0,0)
         self.circle_points = set() # TODO remove        
         self.blocks = defaultdict(list)
+        self.force_win = False
 
         if level != '':
             self.init_grid_from_serialised(level)
@@ -56,7 +57,10 @@ class GameState:
         for y in range(self.grid_height):
             for x in range(self.grid_width):
                 if self.block_grid[x][y] != '':
-                    level_string += self.block_grid[x][y]
+                    if self.grid[x][y] == TileType.SPACE:
+                        level_string += self.block_grid[x][y].upper()
+                    else:
+                        level_string += self.block_grid[x][y]
                 elif self.player_position == (x,y):
                     level_string += tiletype_to_sym_map[TileType.PLAYER]
                 elif self.goal_position == (x,y):
@@ -451,7 +455,9 @@ class GameState:
         return None
 
     def goal_reached(self):
-        return self.player_position == self.tape_end_position == self.goal_position
+        force_win = self.force_win
+        self.force_win = False
+        return force_win or self.player_position == self.tape_end_position == self.goal_position
 
     def player_fallen_off(self):
         # Player has fallen off if every square between player and tape end inclusive is a PIT square
