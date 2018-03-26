@@ -4,6 +4,7 @@ from enum import Enum
 # Constants and utilities needed by various modules in the game.
 
 MAX_TAPE_LENGTH = 6
+GRID_BORDER = MAX_TAPE_LENGTH + 2
 
 class TileType(Enum):
     SPACE  = 1

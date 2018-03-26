@@ -91,8 +91,8 @@ while not finished:
     # Convert everything to window space coordinates
     mouse_window_space_x = (mouse_position[0] - display_rect[0]) / display_rect[2]
     mouse_window_space_y = (mouse_position[1] - display_rect[1]) / display_rect[3]
-    player_window_space_x = (state.player_position[0] - MAX_TAPE_LENGTH) / (state.grid_width - 2*MAX_TAPE_LENGTH)
-    player_window_space_y = (state.player_position[1] - MAX_TAPE_LENGTH) / (state.grid_height - 2*MAX_TAPE_LENGTH)
+    player_window_space_x = (state.player_position[0] - GRID_BORDER) / (state.grid_width - 2*GRID_BORDER)
+    player_window_space_y = (state.player_position[1] - GRID_BORDER) / (state.grid_height - 2*GRID_BORDER)
     # Make coordinates relative to the player
     mouse_player_space_x = mouse_window_space_x - player_window_space_x
     mouse_player_space_y = mouse_window_space_y - player_window_space_y
