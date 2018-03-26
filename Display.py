@@ -31,7 +31,7 @@ class Display:
 
     def render_state(self, state):
         # Work out how big the tiles should be to fit on the given screen size
-        tile_width = int(self.width/state.grid_width)
+        tile_width = int(self.width/(state.grid_width - 2*MAX_TAPE_LENGTH))
         tile_border = int(tile_width/8)
         # Reset screen to black
         self.screen.fill(BLACK)
@@ -49,58 +49,55 @@ class Display:
 
         # Draw the debug grid
         if self.debug_grid:
-            for x in range(state.grid_width + 1):
+            for x in range(state.grid_width - 2*MAX_TAPE_LENGTH + 1):
                 pygame.draw.line(self.screen, RED, (self.x_offset + x*tile_width, self.y_offset), (self.x_offset + x*tile_width, self.y_offset + self.height))
-            for y in range(state.grid_height + 1):
+            for y in range(state.grid_height - 2*MAX_TAPE_LENGTH + 1):
                 pygame.draw.line(self.screen, RED, (self.x_offset, self.y_offset + y*tile_width), (self.x_offset + self.width, self.y_offset + y*tile_width))
         # Draw the grid and the static objects to the pygame screen
-        for x in range(state.grid_width):
-            for y in range(state.grid_height):
+        for x in range(MAX_TAPE_LENGTH, state.grid_width - MAX_TAPE_LENGTH):
+            for y in range(MAX_TAPE_LENGTH, state.grid_height - MAX_TAPE_LENGTH):
                 tiletype = state.grid[x][y]
                 if tiletype == TileType.SPACE:
-                    self.screen.fill(DARK_GREY, [self.x_offset + x * tile_width + tile_border, self.y_offset + y * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)              
+                    self.screen.fill(DARK_GREY, [self.x_offset + x*tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + y * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)              
                 elif tiletype == TileType.WALL:
-                    self.screen.fill(LIGHT_GREY, [self.x_offset + x * tile_width + tile_border, self.y_offset + y * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
+                    self.screen.fill(LIGHT_GREY, [self.x_offset + x*tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + y * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
                     # Filling in gaps between adjacent wall tiles.
                     if x < state.grid_width - 1 and state.grid[x+1][y] == TileType.WALL:
-                        self.screen.fill(LIGHT_GREY, [self.x_offset + (x + 1) * tile_width - tile_border, self.y_offset +  y * tile_width + tile_border, tile_border*2, tile_width - tile_border*2], 0)
+                        self.screen.fill(LIGHT_GREY, [self.x_offset + (x + 1) * tile_width - MAX_TAPE_LENGTH*tile_width - tile_border, self.y_offset + y * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_border*2, tile_width - tile_border*2], 0)
                     if y < state.grid_height - 1 and state.grid[x][y+1] == TileType.WALL:
-                        self.screen.fill(LIGHT_GREY, [self.x_offset + x * tile_width + tile_border, self.y_offset + (y + 1) * tile_width - tile_border, tile_width - tile_border*2, tile_border*2], 0)
-
-                if (x, y) in state.circle_points:
-                    pygame.draw.circle(self.screen, BLACK, (self.x_offset + int(x * tile_width + tile_width/2), self.y_offset + int(y * tile_width + tile_width/2)), 4, 0)
+                        self.screen.fill(LIGHT_GREY, [self.x_offset + x * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + (y + 1) * tile_width - MAX_TAPE_LENGTH*tile_width - tile_border, tile_width - tile_border*2, tile_border*2], 0)
 
         # Draw goal
-        self.screen.fill(LIGHT_GREEN, [self.x_offset + state.goal_position[0] * tile_width + tile_border, self.y_offset + state.goal_position[1] * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
+        self.screen.fill(LIGHT_GREEN, [self.x_offset + state.goal_position[0] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + state.goal_position[1] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
 
         # Draw blocks
         for block_key in state.blocks.keys():
             for position in state.blocks[block_key]:
-                self.screen.fill(BROWN, [self.x_offset + position[0] * tile_width + tile_border, self.y_offset + position[1] * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
+                self.screen.fill(BROWN, [self.x_offset + position[0] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + position[1] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
                 if position[0] < state.grid_width - 1 and state.block_grid[position[0]+1][position[1]] == block_key:
-                    self.screen.fill(BROWN, [self.x_offset + (position[0] + 1) * tile_width - tile_border, self.y_offset + position[1] * tile_width + tile_border, tile_border*2, tile_width - tile_border*2], 0)
+                    self.screen.fill(BROWN, [self.x_offset + (position[0] + 1) * tile_width - MAX_TAPE_LENGTH*tile_width - tile_border, self.y_offset + position[1] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_border*2, tile_width - tile_border*2], 0)
                 if position[1] < state.grid_height - 1 and state.block_grid[position[0]][position[1]+1] == block_key:
-                    self.screen.fill(BROWN, [self.x_offset + position[0] * tile_width + tile_border, self.y_offset + (position[1] + 1) * tile_width - tile_border, tile_width - tile_border*2, tile_border*2], 0)
+                    self.screen.fill(BROWN, [self.x_offset + position[0] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + (position[1] + 1) * tile_width - MAX_TAPE_LENGTH*tile_width - tile_border, tile_width - tile_border*2, tile_border*2], 0)
 
         # Draw rotation obstructions
         for x in range(state.grid_width):
             for y in range(state.grid_height):
                 if self.obstruction_coords != None and (x, y) in self.obstruction_coords:
-                    self.screen.fill(RED, [self.x_offset + x * tile_width + tile_border, self.y_offset + y * tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
+                    self.screen.fill(RED, [self.x_offset + x * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, self.y_offset + y * tile_width - MAX_TAPE_LENGTH*tile_width + tile_border, tile_width - tile_border*2, tile_width - tile_border*2], 0)
 
         # Draw player
-        tape_end_centre = (self.x_offset + int(state.tape_end_position[0] * tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), self.y_offset + int(state.tape_end_position[1] * tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
+        tape_end_centre = (self.x_offset + int(state.tape_end_position[0] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_width/2) + (state.player_direction[0] * tile_width/2), self.y_offset + int(state.tape_end_position[1] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_width/2) + (state.player_direction[1] * tile_width/2))
         tape_edge_offset = vector_scalar_multiply(rotate_right(state.player_direction), state.player_orientation * tile_width * 0.66) 
         tape_edge = vector_add(tape_end_centre, tape_edge_offset)
-        player_screen_position = (self.x_offset + int(state.player_position[0] * tile_width + tile_width/2), self.y_offset + int(state.player_position[1] * tile_width + tile_width/2))
+        player_screen_position = (self.x_offset + int(state.player_position[0] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_width/2), self.y_offset + int(state.player_position[1] * tile_width - MAX_TAPE_LENGTH*tile_width + tile_width/2))
         pygame.draw.line(self.screen, YELLOW, tape_end_centre, player_screen_position, 2)
         pygame.draw.line(self.screen, SILVER, tape_end_centre, tape_edge, 2)
         pygame.draw.circle(self.screen, RED, player_screen_position, int(tile_width/2), 0)
 
     def screen_position_to_grid_square(self, state, position):
-        tile_width = int(self.width/state.grid_width)
-        square = (int((position[0] - self.x_offset)/tile_width), int((position[1] - self.y_offset)/tile_width))
-        if 0 <= square[0] < state.grid_width and 0 <= square[1] < state.grid_height:
+        tile_width = int(self.width/(state.grid_width-2*MAX_TAPE_LENGTH))
+        square = (int((position[0] - self.x_offset)/tile_width) + MAX_TAPE_LENGTH, int((position[1] - self.y_offset)/tile_width) + MAX_TAPE_LENGTH)
+        if MAX_TAPE_LENGTH <= square[0] < state.grid_width - MAX_TAPE_LENGTH and MAX_TAPE_LENGTH <= square[1] < state.grid_height - MAX_TAPE_LENGTH:
             return square
         else:
             return None
