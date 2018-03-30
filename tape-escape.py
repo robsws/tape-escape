@@ -23,7 +23,10 @@ screen_height = int(screen_width * 0.67)
 screen_size = (screen_width, screen_height)
 
 pygame.init()
+
 pygame.joystick.init()
+AXIS_THRESHOLD_RADIUS = 0.4 # How far an analog stick must be pushed before input is registered
+AXIS_THRESHOLD_RADIUS_SQUARED = AXIS_THRESHOLD_RADIUS ** 2
 joysticks = []
 for i in range(pygame.joystick.get_count()):
     joystick = pygame.joystick.Joystick(i)
@@ -123,17 +126,21 @@ button_mapping = {
 }
 
 # Main game loop
+axis_values = [0,0,0,0,0]
 while not finished:
     # Capture input and update game state
     obstruction_coords = None
     for event in pygame.event.get():
-        # Capture button input from mouse
+        # Capture button input from mouse or joystick
         if (
             ( input_mode == InputMode.MOUSE_AND_KEYS and event.type == pygame.MOUSEBUTTONDOWN ) or
             ( input_mode == InputMode.GAMEPAD_AND_KEYS and event.type == pygame.JOYBUTTONDOWN )
         ):
             if (event.type, event.button) in button_mapping:
                 button_mapping[(event.type, event.button)]()
+        # Capture any joypad analog stick input
+        elif event.type == pygame.JOYAXISMOTION:
+            axis_values[event.axis] = event.value
         # Keyboard input
         elif event.type == pygame.KEYDOWN:
             if (event.type, event.key) in button_mapping:
@@ -142,43 +149,34 @@ while not finished:
         elif event.type == pygame.QUIT:
             finished = True
     
-    # Capture mouse hover position to determine which way to face
-    mouse_position = pygame.mouse.get_pos()
-    # Convert everything to window space coordinates
-    mouse_window_space_x = (mouse_position[0] - display_rect[0]) / display_rect[2]
-    mouse_window_space_y = (mouse_position[1] - display_rect[1]) / display_rect[3]
-    player_window_space_x = (state.player_position[0] - GRID_BORDER) / (state.grid_width - 2*GRID_BORDER)
-    player_window_space_y = (state.player_position[1] - GRID_BORDER) / (state.grid_height - 2*GRID_BORDER)
-    # Make coordinates relative to the player
-    mouse_player_space_x = mouse_window_space_x - player_window_space_x
-    mouse_player_space_y = mouse_window_space_y - player_window_space_y
-    # Calculate which quadrant the mouse position exists in
-    # \ n /
-    #  \ /
-    # w X e
-    #  / \
-    # / s \
-    if mouse_player_space_x > 0:
-        # Mouse is East of player
-        if mouse_player_space_y > mouse_player_space_x:
-            # Mouse is South of player
+
+    if input_mode == InputMode.MOUSE_AND_KEYS:
+        # Capture mouse hover position to determine which way to face
+        mouse_position = pygame.mouse.get_pos()
+        # Convert everything to window space coordinates
+        mouse_window_space_x = (mouse_position[0] - display_rect[0]) / display_rect[2]
+        mouse_window_space_y = (mouse_position[1] - display_rect[1]) / display_rect[3]
+        player_window_space_x = (state.player_position[0] - GRID_BORDER) / (state.grid_width - 2*GRID_BORDER)
+        player_window_space_y = (state.player_position[1] - GRID_BORDER) / (state.grid_height - 2*GRID_BORDER)
+        # Make coordinates relative to the player
+        axis_values[0] = mouse_window_space_x - player_window_space_x
+        axis_values[1] = mouse_window_space_y - player_window_space_y
+       
+    # Make sure the values are outside the threshold radius for the gamepad
+    if input_mode == InputMode.MOUSE_AND_KEYS or axis_values[0] ** 2 + axis_values[1] ** 2 > AXIS_THRESHOLD_RADIUS_SQUARED:
+        # Calculate which quadrant the axis position/mouse position exists in
+        # \ n /
+        #  \ /
+        # w X e
+        #  / \
+        # / s \
+        if abs(axis_values[0]) < axis_values[1]:
             obstruction_coords = state.change_direction((0, 1))
-        elif -mouse_player_space_y > mouse_player_space_x:
-            # Mouse is North of player
+        elif abs(axis_values[0]) < -axis_values[1]:
             obstruction_coords = state.change_direction((0, -1))
-        else:
-            # Mouse is strictly East of player
+        elif axis_values[0] > abs(axis_values[1]):
             obstruction_coords = state.change_direction((1, 0))
-    else:
-        # Mouse is West of player
-        if mouse_player_space_y > -mouse_player_space_x:
-            # Mouse is South of player
-            obstruction_coords = state.change_direction((0, 1))
-        elif -mouse_player_space_y > -mouse_player_space_x:
-            # Mouse is North of player
-            obstruction_coords = state.change_direction((0, -1))
-        else:
-            # Mouse is strictly West of player
+        elif -axis_values[0] > abs(axis_values[1]):
             obstruction_coords = state.change_direction((-1, 0))
 
     display.obstruction_coords = obstruction_coords
