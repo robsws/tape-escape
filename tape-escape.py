@@ -23,6 +23,13 @@ screen_height = int(screen_width * 0.67)
 screen_size = (screen_width, screen_height)
 
 pygame.init()
+pygame.joystick.init()
+joysticks = []
+for i in range(pygame.joystick.get_count()):
+    joystick = pygame.joystick.Joystick(i)
+    joystick.init()
+    joysticks.append(joystick)
+
 level_loader = LevelLoader(levels_file)
 
 current_level = 1
@@ -39,49 +46,98 @@ display = Display(screen, display_rect)
 
 enter_debugger = False
 
-# Main game loop
+# Define user actions and input mapping
 finished = False
+class InputMode(Enum):
+    MOUSE_AND_KEYS  = 1
+    GAMEPAD_AND_KEYS   = 2
+input_mode = InputMode.MOUSE_AND_KEYS
+if len(joysticks) > 0:
+    input_mode = InputMode.GAMEPAD_AND_KEYS
+
+def extend_tape():
+    state.extend_tape()
+    history.add(state)
+
+def retract_tape():
+    state.retract_tape()
+    history.add(state)
+
+def change_orientation():
+    state.switch_orientation()
+    history.add(state)
+
+def toggle_input_mode():
+    global input_mode
+    if input_mode == InputMode.MOUSE_AND_KEYS:
+        input_mode = InputMode.GAMEPAD_AND_KEYS
+    else:
+        input_mode = InputMode.MOUSE_AND_KEYS
+
+def skip_level():
+    state.force_win = True
+    history.add(state)
+
+def previous_level():
+    global current_level, starting_state, state
+    current_level -= 1
+    starting_state = level_loader.load_new_level_state(current_level)
+    state = deepcopy(starting_state)
+    history.add(state)
+
+def restart_level():
+    global state
+    state = deepcopy(starting_state)
+    history.add(state)
+
+def undo():
+    global state
+    state = history.back()
+
+def redo():
+    global state
+    state = history.forward()
+
+def quit_game():
+    global finished
+    finished = True
+
+button_mapping = {
+    (pygame.MOUSEBUTTONDOWN, 1): extend_tape,
+    (pygame.MOUSEBUTTONDOWN, 2): change_orientation,
+    (pygame.MOUSEBUTTONDOWN, 3): retract_tape,
+    (pygame.KEYDOWN, pygame.K_m): toggle_input_mode,
+    (pygame.KEYDOWN, pygame.K_n): skip_level,
+    (pygame.KEYDOWN, pygame.K_p): previous_level,
+    (pygame.KEYDOWN, pygame.K_r): restart_level,
+    (pygame.KEYDOWN, pygame.K_z): undo,
+    (pygame.KEYDOWN, pygame.K_y): redo,
+    (pygame.KEYDOWN, pygame.K_q): quit_game,
+    (pygame.JOYBUTTONDOWN, 5): extend_tape,
+    (pygame.JOYBUTTONDOWN, 4): retract_tape,
+    (pygame.JOYBUTTONDOWN, 3): restart_level,
+    (pygame.JOYBUTTONDOWN, 2): undo,
+    (pygame.JOYBUTTONDOWN, 1): redo,
+    (pygame.JOYBUTTONDOWN, 6): quit_game,
+    (pygame.JOYBUTTONDOWN, 0): change_orientation,
+}
+
+# Main game loop
 while not finished:
     # Capture input and update game state
     obstruction_coords = None
     for event in pygame.event.get():
         # Capture button input from mouse
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if enter_debugger:
-                pdb.set_trace()
-            if event.button == 1: # left click
-                state.extend_tape()
-                history.add(state)
-            elif event.button == 2: # middle click
-                obstruction_coords = state.switch_orientation()
-                history.add(state)
-            elif event.button == 3: # right click
-                state.retract_tape()
-                history.add(state)
-        # Keyboard cheats
+        if (
+            ( input_mode == InputMode.MOUSE_AND_KEYS and event.type == pygame.MOUSEBUTTONDOWN ) or
+            ( input_mode == InputMode.GAMEPAD_AND_KEYS and event.type == pygame.JOYBUTTONDOWN )
+        ):
+            if (event.type, event.button) in button_mapping:
+                button_mapping[(event.type, event.button)]()
+        # Keyboard input
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_n:
-                # N key skips level
-                state.force_win = True
-                history.add(state)
-            elif event.key == pygame.K_p and current_level > 0:
-                # P key goes back a level
-                current_level -= 1
-                starting_state = level_loader.load_new_level_state(current_level)
-                state = deepcopy(starting_state)
-                history.add(state)
-            elif event.key == pygame.K_r:
-                # R key restarts level
-                state = deepcopy(starting_state)
-                history.add(state)
-            elif event.key == pygame.K_z:
-                # Z key undoes a move
-                state = history.back()
-            elif event.key == pygame.K_y:
-                # Y key redoes a move
-                state = history.forward()
-            elif event.key == pygame.K_d:
-                enter_debugger = True
+            if (event.type, event.key) in button_mapping:
+                button_mapping[(event.type, event.key)]()
         # Quit game if QUIT signal is detected
         elif event.type == pygame.QUIT:
             finished = True
