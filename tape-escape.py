@@ -55,9 +55,11 @@ finished = False
 class InputMode(Enum):
     MOUSE_AND_KEYS  = 1
     GAMEPAD_AND_KEYS   = 2
-input_mode = InputMode.MOUSE_AND_KEYS
-if len(joysticks) > 0:
-    input_mode = InputMode.GAMEPAD_AND_KEYS
+input_mode_map = {
+    'Mouse': InputMode.MOUSE_AND_KEYS,
+    'Gamepad': InputMode.GAMEPAD_AND_KEYS
+}
+input_mode = input_mode_map[easygui.buttonbox(msg='Please choose an input method.', choices=list(input_mode_map.keys()))]
 
 def extend_tape():
     state.extend_tape()
