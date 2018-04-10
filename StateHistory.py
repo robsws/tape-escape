@@ -37,3 +37,7 @@ class StateHistory:
     def to_string(self):
         mem_strings = map(lambda x: str(x.player_position)+','+str(x.tape_end_position), self.memory)
         return ' : '.join(mem_strings)
+
+    def forget_last_state(self):
+        # forget last state
+        self.memory.popleft()

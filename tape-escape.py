@@ -1,6 +1,7 @@
 import pygame
 from copy import deepcopy
 import pdb
+import easygui
 import argparse
 
 from Utils import *
@@ -41,7 +42,7 @@ state = deepcopy(starting_state)
 
 MAX_HISTORY = 50
 history = StateHistory(MAX_HISTORY)
-history.add(state)
+history.add((state, current_level))
 
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0,0,screen_width, screen_height]
@@ -60,15 +61,15 @@ if len(joysticks) > 0:
 
 def extend_tape():
     state.extend_tape()
-    history.add(state)
+    history.add((state, current_level))
 
 def retract_tape():
     state.retract_tape()
-    history.add(state)
+    history.add((state, current_level))
 
 def change_orientation():
     state.switch_orientation()
-    history.add(state)
+    history.add((state, current_level))
 
 def toggle_input_mode():
     global input_mode
@@ -78,28 +79,31 @@ def toggle_input_mode():
         input_mode = InputMode.MOUSE_AND_KEYS
 
 def skip_level():
-    state.force_win = True
-    history.add(state)
+    global current_level, starting_state, state
+    current_level += 1
+    starting_state = level_loader.load_new_level_state(current_level)
+    state = deepcopy(starting_state)
+    history.add((state, current_level))
 
 def previous_level():
     global current_level, starting_state, state
     current_level -= 1
     starting_state = level_loader.load_new_level_state(current_level)
     state = deepcopy(starting_state)
-    history.add(state)
+    history.add((state, current_level))
 
 def restart_level():
     global state
     state = deepcopy(starting_state)
-    history.add(state)
+    history.add((state, current_level))
 
 def undo():
-    global state
-    state = history.back()
+    global state, current_level
+    state, current_level = history.back()
 
 def redo():
-    global state
-    state = history.forward()
+    global state, current_level
+    state, current_level = history.forward()
 
 def quit_game():
     global finished
@@ -110,8 +114,8 @@ button_mapping = {
     (pygame.MOUSEBUTTONDOWN, 2): change_orientation,
     (pygame.MOUSEBUTTONDOWN, 3): retract_tape,
     (pygame.KEYDOWN, pygame.K_m): toggle_input_mode,
-    (pygame.KEYDOWN, pygame.K_n): skip_level,
-    (pygame.KEYDOWN, pygame.K_p): previous_level,
+    # (pygame.KEYDOWN, pygame.K_n): skip_level,
+    # (pygame.KEYDOWN, pygame.K_p): previous_level,
     (pygame.KEYDOWN, pygame.K_r): restart_level,
     (pygame.KEYDOWN, pygame.K_z): undo,
     (pygame.KEYDOWN, pygame.K_y): redo,
@@ -188,9 +192,11 @@ while not finished:
         if current_level <= len(level_loader.config['Levels']):
             starting_state = level_loader.load_new_level_state(current_level)
             state = deepcopy(starting_state)
+            history.forget_last_state()
         else:
             # TODO: Something should happen when player finishes the game
             finished = True
+            easygui.msgbox(msg="Congratulations on beating the demo! -R", title="Demo Complete!", image="images/player_happy.jpg", ok_button="I am ready to pull myself away from this game.")    
         display.flash_green()
     # Put player back at the beginning and flash red if the player has fallen off
     elif state.player_fallen_off():
