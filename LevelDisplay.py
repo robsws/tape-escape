@@ -17,7 +17,7 @@ BROWN       = 204, 102,   0
 
 SCREEN_BORDER_THICKNESS = 0.01
 
-class Display:
+class LevelDisplay:
 
     def __init__(self, screen, display_rect):
         self.screen = screen

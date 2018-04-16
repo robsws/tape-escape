@@ -7,7 +7,7 @@ import argparse
 from Utils import *
 from GameState import LevelLoader, GameState
 from StateHistory import StateHistory
-from Display import Display
+from LevelDisplay import *
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
 import win_unicode_console
@@ -46,7 +46,7 @@ history.add((state, current_level))
 
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0,0,screen_width, screen_height]
-display = Display(screen, display_rect)
+display = LevelDisplay(screen, display_rect)
 
 enter_debugger = False
 
@@ -59,8 +59,38 @@ input_mode_map = {
     'Mouse': InputMode.MOUSE_AND_KEYS,
     'Gamepad': InputMode.GAMEPAD_AND_KEYS
 }
-input_mode = input_mode_map[easygui.buttonbox(msg='Please choose an input method.', choices=list(input_mode_map.keys()))]
+input_mode = InputMode.MOUSE_AND_KEYS
 
+h1_font = pygame.font.SysFont('monospace', 50, bold=True)
+h2_font = pygame.font.SysFont('monospace', 30, bold=True, italic=True)
+normal_font = pygame.font.SysFont('monospace', 15)
+
+# Main menu
+finished = False
+while not finished:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            finished = True
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            input_mode = InputMode.MOUSE_AND_KEYS
+            finished = True
+        elif event.type == pygame.JOYBUTTONDOWN:
+            input_mode = InputMode.GAMEPAD_AND_KEYS
+            finished = True
+    # Draw the menu
+    screen.fill(BLACK)
+    # Draw the name of the game
+    game_name = h1_font.render('Tape Escape', 1, SILVER)
+    game_name_rect = game_name.get_rect()
+    game_name_pos = (int(screen_width/2 - game_name_rect[2]/2), int(screen_height/2 - game_name_rect[3]/2))
+    screen.blit(game_name, game_name_pos)
+    
+    tagline = h2_font.render('Will you measure up?', 1, LIGHT_GREY)
+    instruction1 = normal_font.render('Mouse click -> Play with Mouse controls.', 1, BROWN)
+    instruction2 = normal_font.render('Gamepad button -> Play with Gamepad controls.', 1, BROWN)
+    pygame.display.flip()
+
+# User input functions
 def extend_tape():
     state.extend_tape()
     history.add((state, current_level))
@@ -107,6 +137,9 @@ def redo():
     global state, current_level
     state, current_level = history.forward()
 
+def pause_game():
+    easygui.msgbox(msg="Game Paused.\nControls:\n   Mouse:\n     Move mouse - change player direction\n     Left click - Extend tape\n     Right click - Retract tape\n     Middle click - Flip tape\n     R Key - Restart level\n     Z Key - Undo move\n     Y Key - Redo move\n     Q Key - Quit\n   Gamepad:\n     ")
+
 def quit_game():
     global finished
     finished = True
@@ -122,17 +155,20 @@ button_mapping = {
     (pygame.KEYDOWN, pygame.K_z): undo,
     (pygame.KEYDOWN, pygame.K_y): redo,
     (pygame.KEYDOWN, pygame.K_q): quit_game,
+    (pygame.KEYDOWN, pygame.K_ESCAPE): pause_game,
     (pygame.JOYBUTTONDOWN, 5): extend_tape,
     (pygame.JOYBUTTONDOWN, 4): retract_tape,
     (pygame.JOYBUTTONDOWN, 3): restart_level,
     (pygame.JOYBUTTONDOWN, 2): undo,
     (pygame.JOYBUTTONDOWN, 1): redo,
     (pygame.JOYBUTTONDOWN, 6): quit_game,
+    (pygame.JOYBUTTONDOWN, 7): pause_game,
     (pygame.JOYBUTTONDOWN, 0): change_orientation,
 }
 
 # Main game loop
 axis_values = [0,0,0,0,0]
+finished = False
 while not finished:
     # Capture input and update game state
     obstruction_coords = None
