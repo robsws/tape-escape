@@ -42,10 +42,10 @@ class LevelDisplay:
         top_right = (self.x_outer_offset + (self.outer_width - border_offset), self.y_outer_offset + border_offset)
         bottom_left = (self.x_outer_offset + border_offset, self.y_outer_offset + (self.outer_height - border_offset))
         bottom_right = (self.x_outer_offset + (self.outer_width - border_offset), self.y_outer_offset + (self.outer_height - border_offset))
-        pygame.draw.line(self.screen, LIGHT_GREY, top_left, top_right, border_offset*2)
-        pygame.draw.line(self.screen, LIGHT_GREY, top_left, bottom_left, border_offset*2)
-        pygame.draw.line(self.screen, LIGHT_GREY, bottom_left, bottom_right, border_offset*2)
-        pygame.draw.line(self.screen, LIGHT_GREY, top_right, bottom_right, border_offset*2)
+        # pygame.draw.line(self.screen, LIGHT_GREY, top_left, top_right, border_offset*2)
+        # pygame.draw.line(self.screen, LIGHT_GREY, top_left, bottom_left, border_offset*2)
+        # pygame.draw.line(self.screen, LIGHT_GREY, bottom_left, bottom_right, border_offset*2)
+        # pygame.draw.line(self.screen, LIGHT_GREY, top_right, bottom_right, border_offset*2)
 
         # Draw the debug grid
         if self.debug_grid:

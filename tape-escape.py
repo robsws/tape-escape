@@ -45,7 +45,7 @@ history = StateHistory(MAX_HISTORY)
 history.add((state, current_level))
 
 screen = pygame.display.set_mode(screen_size)
-display_rect = [0,0,screen_width, screen_height]
+display_rect = [0, int(screen_height*0.2), int(screen_width*0.8), int(screen_height*0.8)]
 display = LevelDisplay(screen, display_rect)
 
 enter_debugger = False
@@ -63,7 +63,7 @@ input_mode = InputMode.MOUSE_AND_KEYS
 
 h1_font = pygame.font.SysFont('monospace', 50, bold=True)
 h2_font = pygame.font.SysFont('monospace', 30, bold=True, italic=True)
-normal_font = pygame.font.SysFont('monospace', 15)
+normal_font = pygame.font.SysFont('monospace', 20)
 
 # Main menu
 finished = False
@@ -174,7 +174,7 @@ button_mapping = {
     (pygame.JOYBUTTONDOWN, 2): undo,
     (pygame.JOYBUTTONDOWN, 1): redo,
     (pygame.JOYBUTTONDOWN, 6): quit_game,
-    (pygame.JOYBUTTONDOWN, 7): pause_game,
+    # (pygame.JOYBUTTONDOWN, 7): pause_game,
     (pygame.JOYBUTTONDOWN, 0): change_orientation,
 }
 
@@ -252,6 +252,33 @@ while not finished:
     elif state.player_fallen_off():
         state = deepcopy(starting_state)
         display.flash_red()
+
+    # Draw button config
+    button_config_lines = ["Controls:",
+                         "Move mouse - change direction",
+                         "Left click - Extend tape",
+                         "Right click - Retract tape",
+                         "Middle click - Flip tape",
+                         "R Key - Restart level",
+                         "Z Key - Undo move",
+                         "Y Key - Redo move",
+                         "Q Key - Quit"]
+    if input_mode == InputMode.GAMEPAD_AND_KEYS:
+        button_config_lines = ["Controls:",
+                             "Left stick - change direction",
+                             "RB - Extend tape",
+                             "LB - Retract tape",
+                             "A - Flip tape",
+                             "Y - Restart level",
+                             "X - Undo move",
+                             "B - Redo move",
+                             "Select - Quit"]
+    for i, line in enumerate(button_config_lines):
+        instruction = normal_font.render(line, 1, BROWN)
+        instruction_rect = instruction.get_rect()
+        instruction_rect.right = screen_width - 5
+        instruction_rect.top += instruction_rect.height * i
+        screen.blit(instruction, instruction_rect)
 
     pygame.display.flip()
 
