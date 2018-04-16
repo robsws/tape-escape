@@ -70,7 +70,8 @@ finished = False
 while not finished:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            finished = True
+            pygame.quit()
+            quit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             input_mode = InputMode.MOUSE_AND_KEYS
             finished = True
@@ -82,12 +83,23 @@ while not finished:
     # Draw the name of the game
     game_name = h1_font.render('Tape Escape', 1, SILVER)
     game_name_rect = game_name.get_rect()
-    game_name_pos = (int(screen_width/2 - game_name_rect[2]/2), int(screen_height/2 - game_name_rect[3]/2))
+    game_name_pos = (int(screen_width/2 - game_name_rect[2]/2), int(screen_height/2 - game_name_rect[3]*3))
     screen.blit(game_name, game_name_pos)
-    
+    # Draw the tagline
     tagline = h2_font.render('Will you measure up?', 1, LIGHT_GREY)
+    tagline_rect = tagline.get_rect()
+    tagline_pos = (int(screen_width/2 - tagline_rect[2]/2), int(screen_height/2 - game_name_rect[3]*2))
+    screen.blit(tagline, tagline_pos)
+    # Draw the instructions
     instruction1 = normal_font.render('Mouse click -> Play with Mouse controls.', 1, BROWN)
+    instruction1_rect = instruction1.get_rect()
+    instruction1_pos = (int(screen_width/2 - instruction1_rect[2]/2), int(screen_height/2 - instruction1_rect[3]))
+    screen.blit(instruction1, instruction1_pos)
     instruction2 = normal_font.render('Gamepad button -> Play with Gamepad controls.', 1, BROWN)
+    instruction2_rect = instruction2.get_rect()
+    instruction2_pos = (int(screen_width/2 - instruction2_rect[2]/2), int(screen_height/2))
+    screen.blit(instruction2, instruction2_pos)
+    # Flip buffer
     pygame.display.flip()
 
 # User input functions
