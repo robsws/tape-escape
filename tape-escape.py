@@ -181,6 +181,7 @@ button_mapping = {
 # Main game loop
 axis_values = [0,0,0,0,0]
 finished = False
+game_complete = False
 while not finished:
     # Capture input and update game state
     obstruction_coords = None
@@ -244,9 +245,8 @@ while not finished:
             state = deepcopy(starting_state)
             history.forget_last_state()
         else:
-            # TODO: Something should happen when player finishes the game
             finished = True
-            easygui.msgbox(msg="Congratulations on beating the demo! -R", title="Demo Complete!", image="images/player_happy.jpg", ok_button="I am ready to pull myself away from this game.")    
+            game_complete = True
         display.flash_green()
     # Put player back at the beginning and flash red if the player has fallen off
     elif state.player_fallen_off():
@@ -281,5 +281,25 @@ while not finished:
         screen.blit(instruction, instruction_rect)
 
     pygame.display.flip()
+
+if game_complete:
+    finished = False
+    while not finished:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.JOYBUTTONDOWN:
+                finished = True
+        screen.fill(BLACK)
+        game_name = h1_font.render('Congratulations!', 1, SILVER)
+        game_name_rect = game_name.get_rect()
+        game_name_pos = (int(screen_width/2 - game_name_rect[2]/2), int(screen_height/2 - game_name_rect[3]*3))
+        screen.blit(game_name, game_name_pos)
+        tagline = h2_font.render('You have finished the demo. Click to quit.', 1, LIGHT_GREY)
+        tagline_rect = tagline.get_rect()
+        tagline_pos = (int(screen_width/2 - tagline_rect[2]/2), int(screen_height/2 - game_name_rect[3]*2))
+        screen.blit(tagline, tagline_pos)
+        pygame.display.flip()
 
 pygame.quit()
