@@ -296,7 +296,7 @@ if game_complete:
         game_name_rect = game_name.get_rect()
         game_name_pos = (int(screen_width/2 - game_name_rect[2]/2), int(screen_height/2 - game_name_rect[3]*3))
         screen.blit(game_name, game_name_pos)
-        tagline = h2_font.render('You have finished the demo. Click to quit.', 1, LIGHT_GREY)
+        tagline = h2_font.render('You have finished the demo. Press any button to quit.', 1, LIGHT_GREY)
         tagline_rect = tagline.get_rect()
         tagline_pos = (int(screen_width/2 - tagline_rect[2]/2), int(screen_height/2 - game_name_rect[3]*2))
         screen.blit(tagline, tagline_pos)
