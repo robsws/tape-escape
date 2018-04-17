@@ -237,22 +237,6 @@ while not finished:
     display.obstruction_coords = obstruction_coords
     display.render_state(state)
 
-    # Load next level if player has reached the goal
-    if state.goal_reached():
-        current_level += 1
-        if current_level <= len(level_loader.config['Levels']):
-            starting_state = level_loader.load_new_level_state(current_level)
-            state = deepcopy(starting_state)
-            history.forget_last_state()
-        else:
-            finished = True
-            game_complete = True
-        display.flash_green()
-    # Put player back at the beginning and flash red if the player has fallen off
-    elif state.player_fallen_off():
-        state = deepcopy(starting_state)
-        display.flash_red()
-
     # Draw button config
     button_config_lines = ["Controls:",
                          "Move mouse - change direction",
@@ -279,6 +263,29 @@ while not finished:
         instruction_rect.right = screen_width - 5
         instruction_rect.top += instruction_rect.height * i
         screen.blit(instruction, instruction_rect)
+
+    # Draw level name
+    level_name = normal_font.render(level_loader.config['LevelNames'][str(current_level)], 1, LIGHT_GREEN)
+    level_name_rect = level_name.get_rect()
+    level_name_rect.left = 0 + 5
+    level_name_rect.bottom = screen_height - 5
+    screen.blit(level_name, level_name_rect)
+
+    # Load next level if player has reached the goal
+    if state.goal_reached():
+        current_level += 1
+        if current_level <= len(level_loader.config['Levels']):
+            starting_state = level_loader.load_new_level_state(current_level)
+            state = deepcopy(starting_state)
+            history.forget_last_state()
+        else:
+            finished = True
+            game_complete = True
+        display.flash_green()
+    # Put player back at the beginning and flash red if the player has fallen off
+    elif state.player_fallen_off():
+        state = deepcopy(starting_state)
+        display.flash_red()
 
     pygame.display.flip()
 
