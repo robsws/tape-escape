@@ -45,7 +45,7 @@ history = StateHistory(MAX_HISTORY)
 history.add((state, current_level))
 
 screen = pygame.display.set_mode(screen_size)
-display_rect = [0, int(screen_height*0.2), int(screen_width*0.8), int(screen_height*0.8)]
+display_rect = [0, int(screen_height*0.1), int(screen_width*0.8), int(screen_height*0.8)]
 display = LevelDisplay(screen, display_rect)
 
 enter_debugger = False
