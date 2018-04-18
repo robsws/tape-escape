@@ -141,6 +141,13 @@ def restart_level():
     state = deepcopy(starting_state)
     history.add((state, current_level))
 
+def last_level():
+    global current_level, starting_state, state
+    current_level = len(level_loader.config["Levels"])
+    starting_state = level_loader.load_new_level_state(current_level)
+    state = deepcopy(starting_state)
+    history.add((state, current_level))
+
 def undo():
     global state, current_level
     state, current_level = history.back()
@@ -168,6 +175,7 @@ button_mapping = {
     (pygame.KEYDOWN, pygame.K_y): redo,
     (pygame.KEYDOWN, pygame.K_q): quit_game,
     (pygame.KEYDOWN, pygame.K_ESCAPE): pause_game,
+    (pygame.KEYDOWN, pygame.K_9): last_level,
     (pygame.JOYBUTTONDOWN, 5): extend_tape,
     (pygame.JOYBUTTONDOWN, 4): retract_tape,
     (pygame.JOYBUTTONDOWN, 3): restart_level,

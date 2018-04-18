@@ -139,14 +139,19 @@ class ToggleButtonGroup:
 
 # Set up regular action buttons
 action_buttons = list()
+level_names = dict()
 
 # Save button
 def save():
     global states
     config = configparser.ConfigParser()
     config.add_section('Levels')
+    config.add_section('LevelNames')
     for i, state in enumerate(states):
         config.set('Levels', str(i+1), state.serialize())
+        if i not in level_names:
+            level_names[i] = 'Level name '+str(i+1)
+        config.set('LevelNames', str(i+1), level_names[i])
 
     # filename = easygui.filesavebox(default='levels.ini', filetypes=['*.ini'])
     filename = 'levels.ini'
@@ -171,6 +176,8 @@ def load():
         print("File load failed: "+str(err))
     for i in range(len(levelloader.config['Levels'])):
         states.append(levelloader.load_new_level_state(i+1))
+    for i in range(len(levelloader.config['LevelNames'])):
+        level_names[i] = levelloader.config['LevelNames'][str(i+1)]
 
 load()
 action_buttons.append(Button(ButtonType.LOAD, screen, int(screen_width / 10), 0, int(screen_width / 10), display.y_outer_offset, "images/load_icon.png", load))
