@@ -20,10 +20,11 @@ class LevelLoader:
 class GameState:
 
     def __init__(self, level='', width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
-        self.player_position = (0,0)
+        # Border of width GRID_BORDER is added so that tape end cannot go out of bounds.
+        self.player_position = (GRID_BORDER, GRID_BORDER)
         self.player_direction = (0,-1)
         self.player_orientation = -1 # -1 for left, 1 for right
-        self.tape_end_position = (0,0)
+        self.tape_end_position = (GRID_BORDER, GRID_BORDER)
         self.circle_points = set() # TODO remove        
         self.blocks = defaultdict(list)
         self.force_win = False
@@ -31,7 +32,7 @@ class GameState:
         if level != '':
             self.init_grid_from_serialised(level)
         else:
-            self.init_blank_grid(width, height)
+            self.init_blank_grid(width + 2*GRID_BORDER, height + 2*GRID_BORDER)
         
 
     def init_blank_grid(self, width, height):
@@ -39,23 +40,22 @@ class GameState:
         self.grid_width = width
         self.grid_height = height
         self.grid = [[TileType.PIT for y in range(self.grid_height)] for x in range(self.grid_width)]
-        self.goal_position = (self.grid_width-1, self.grid_height-1)        
+        self.goal_position = (self.grid_width-1, self.grid_height-1)
         self.update_block_grid()
 
     def init_grid_from_serialised(self, level):
         # Build the internal level grid from string representation
         lines = level.splitlines()
-        self.init_blank_grid(len(lines[0]), len(lines))
-
+        self.init_blank_grid(len(lines[0]) + 2*GRID_BORDER, len(lines) + 2*GRID_BORDER)
         for y, line in enumerate(lines):
             for x, tile in enumerate(line):
-                self.update_grid_square(x, y, tile)
+                self.update_grid_square(x + GRID_BORDER, y + GRID_BORDER, tile)
 
     def serialize(self):
         # Serialize the state down to a string representation (reverse of init_grid_from_serialized)
         level_string = ''
-        for y in range(self.grid_height):
-            for x in range(self.grid_width):
+        for y in range(GRID_BORDER, self.grid_height - GRID_BORDER):
+            for x in range(GRID_BORDER, self.grid_width - GRID_BORDER):
                 if self.block_grid[x][y] != '':
                     if self.grid[x][y] == TileType.SPACE:
                         level_string += self.block_grid[x][y].upper()
@@ -105,7 +105,7 @@ class GameState:
 
     def update_block_grid(self):
         # Reset the lookup table
-        self.block_grid = [['' for y in range(self.grid_height)] for x in range(self.grid_width)]
+        self.block_grid = [['' for y in range(self.grid_height + 2*GRID_BORDER)] for x in range(self.grid_width + 2*GRID_BORDER)]
         # Loop over blocks and store key in respective positions in lookup table
         for block_key in self.blocks.keys():
             positions = self.blocks[block_key]

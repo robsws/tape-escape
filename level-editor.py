@@ -5,7 +5,7 @@ import configparser
 
 from Utils import *
 from GameState import GameState, LevelLoader
-from Display import *
+from LevelDisplay import *
 
 TOOLBAR_THICKNESS = 0.1
 TILEBAR_THICKNESS = 0.2
@@ -32,7 +32,7 @@ states = [GameState()]
 
 screen = pygame.display.set_mode(screen_size)
 display_rect = [0, TOOLBAR_THICKNESS*screen_height, screen_width - TILEBAR_THICKNESS*screen_width, screen_height - 2*TOOLBAR_THICKNESS*screen_height]
-display = Display(screen, display_rect)
+display = LevelDisplay(screen, display_rect)
 display.debug_grid = True
 
 class ButtonType(Enum):
@@ -79,7 +79,7 @@ button_type_to_tile_type_map = {
     ButtonType.TILE_BLOCK_D_PIT: 'd',
     ButtonType.TILE_BLOCK_E_PIT: 'e',
     ButtonType.TILE_BLOCK_F_PIT: 'f'
-}
+}   
 
 class Button:
 
@@ -135,18 +135,23 @@ class ToggleButtonGroup:
                 break
 
     def get_active_button(self):
-        return self.buttons[self.active]   
+        return self.buttons[self.active]
 
 # Set up regular action buttons
 action_buttons = list()
+level_names = dict()
 
 # Save button
 def save():
     global states
     config = configparser.ConfigParser()
     config.add_section('Levels')
+    config.add_section('LevelNames')
     for i, state in enumerate(states):
         config.set('Levels', str(i+1), state.serialize())
+        if i not in level_names:
+            level_names[i] = 'Level name '+str(i+1)
+        config.set('LevelNames', str(i+1), level_names[i])
 
     # filename = easygui.filesavebox(default='levels.ini', filetypes=['*.ini'])
     filename = 'levels.ini'
@@ -171,6 +176,8 @@ def load():
         print("File load failed: "+str(err))
     for i in range(len(levelloader.config['Levels'])):
         states.append(levelloader.load_new_level_state(i+1))
+    for i in range(len(levelloader.config['LevelNames'])):
+        level_names[i] = levelloader.config['LevelNames'][str(i+1)]
 
 load()
 action_buttons.append(Button(ButtonType.LOAD, screen, int(screen_width / 10), 0, int(screen_width / 10), display.y_outer_offset, "images/load_icon.png", load))
