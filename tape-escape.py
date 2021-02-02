@@ -1,7 +1,6 @@
 import pygame
 from copy import deepcopy
 import pdb
-import easygui
 import argparse
 
 from Utils import *
@@ -10,8 +9,10 @@ from StateHistory import StateHistory
 from LevelDisplay import *
 
 # Windows bug https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
-import win_unicode_console
-win_unicode_console.enable()
+import os
+if os.name == 'nt':
+    import win_unicode_console
+    win_unicode_console.enable()
 
 arg_parser = argparse.ArgumentParser(description='A game where you play as a tape measure.')
 arg_parser.add_argument('-w', help='Screen width in pixels', default=600)
@@ -157,7 +158,7 @@ def redo():
     state, current_level = history.forward()
 
 def pause_game():
-    easygui.msgbox(msg="Game Paused.\nControls:\n   Mouse:\n     Move mouse - change player direction\n     Left click - Extend tape\n     Right click - Retract tape\n     Middle click - Flip tape\n     R Key - Restart level\n     Z Key - Undo move\n     Y Key - Redo move\n     Q Key - Quit\n   Gamepad:\n     ")
+    pass
 
 def quit_game():
     global finished
